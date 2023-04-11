@@ -5,12 +5,12 @@ from protorl.memory.generic import initialize_memory
 from protorl.utils.network_utils import make_ppo_networks
 from protorl.policies.beta import BetaPolicy
 from protorl.wrappers.vec_env import make_vec_envs
+from protorl.args import parse_args
 
 
 def main():
+    args = parse_args()
     env_name = 'LunarLanderContinuous-v2'
-    n_games = 4000
-    bs = 64
     n_threads = 8
     n_epochs = 10
     horizon = 16384
@@ -33,7 +33,7 @@ def main():
 
     memory = initialize_memory(max_size=T,
                                obs_shape=env.observation_space.shape,
-                               batch_size=bs,
+                               batch_size=args.bs,
                                n_actions=env.action_space.shape[0],
                                action_space='continuous',
                                n_threads=n_threads,
@@ -51,7 +51,7 @@ def main():
                           extra_functionality=[agent.anneal_policy_clip],
                           adapt_actions=True)
 
-    scores, steps_array = ep_loop.run(n_games)
+    scores, steps_array = ep_loop.run(args.n_games)
 
 
 if __name__ == '__main__':
