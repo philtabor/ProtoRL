@@ -61,7 +61,7 @@ class SubprocVecEnv:
             remote.send(('step', action))
         results = [remote.recv() for remote in self.remotes]
         obs, rews, dones, trunc, infos = zip(*results)
-        return np.stack(obs), np.stack(rews), np.stack(dones),\
+        return np.stack(obs), np.stack(rews), np.stack(dones), \
             np.stack(trunc), infos
 
     def reset(self):
@@ -116,9 +116,9 @@ class CloudpickleWrapper:
 
 def make_single_env(env_id, rank, use_atari, repeat=4,
                     clip_rewards=False, no_ops=0, fire_first=False,
-                    shape=(84, 84, 1)):
+                    shape=(84, 84, 1), **kwargs):
     def _thunk():
-        env = gym.make(env_id)
+        env = gym.make(env_id, **kwargs)
         if use_atari:
             env = RepeatActionAndMaxFrame(env, repeat, clip_rewards,
                                           no_ops, fire_first)
@@ -128,11 +128,11 @@ def make_single_env(env_id, rank, use_atari, repeat=4,
     return _thunk
 
 
-def make_vec_envs(env_name, use_atari=False, seed=None, n_threads=2):
+def make_vec_envs(env_name, use_atari=False, seed=None, n_threads=2, **kwargs):
     mpi_rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
     seed = seed + 10000 * mpi_rank if seed is not None else None
     set_global_seeds(seed)
-    envs = [make_single_env(env_name, i, use_atari)
+    envs = [make_single_env(env_name, i, use_atari, **kwargs)
             for i in range(n_threads)]
 
     envs = SubprocVecEnv(envs, seed)
