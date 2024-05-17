@@ -47,8 +47,7 @@ def main():
                   action_type='discrete', N=T, n_epochs=n_epochs)
 
     ep_loop = EpisodeLoop(agent, env, n_threads=n_threads, clip_reward=True,
-                          extra_functionality=[agent.anneal_policy_clip],
-                          adapt_actions=True)
+                          extra_functionality=[agent.anneal_policy_clip])
 
     scores, steps_array = ep_loop.run(n_games)
 
