@@ -153,37 +153,44 @@ def make_sac_networks(env):
     return actor, critic_1, critic_2, value, target_value
 
 
-def make_ppo_networks(env, action_space='discrete'):
+def make_ppo_networks(env, action_space='discrete',
+                      actor_hidden_dims=[128, 128],
+                      critic_hidden_dims=[128, 128],
+                      uniform_initialize=True):
     actor_base = LinearTanhBase(name='ppo_actor_base',
                                 input_dims=env.observation_space.shape,
-                                hidden_dims=[128, 128])
+                                hidden_dims=actor_hidden_dims)
     critic_base = LinearTanhBase(name='ppo_critic_base',
-                                 hidden_dims=[128, 128],
+                                 hidden_dims=critic_hidden_dims,
                                  input_dims=env.observation_space.shape)
-    critic_head = ValueHead(name='ppo_critic_head', input_dims=[128])
+    critic_head = ValueHead(name='ppo_critic_head',
+                            input_dims=critic_hidden_dims[-1])
 
     if action_space == 'discrete':
         actor_head = SoftmaxHead(n_actions=env.action_space.n,
-                                 name='ppo_actor_head', input_dims=[128])
+                                 name='ppo_actor_head',
+                                 input_dims=actor_hidden_dims[-1])
     elif action_space == 'continuous':
-        actor_head = BetaHead(name='ppo_actor_head', input_dims=[128],
+        actor_head = BetaHead(name='ppo_actor_head',
+                              input_dims=actor_hidden_dims[-1],
                               n_actions=env.action_space.shape[0])
 
     actor = Sequential(actor_base, actor_head)
     critic = Sequential(critic_base, critic_head)
 
-    for m in actor.modules():
-        if isinstance(m, nn.Linear):
-            stdv = 1. / math.sqrt(m.weight.size(1))
-            nn.init.uniform_(m.weight, -stdv, stdv)
-            if m.bias is not None:
-                m.bias.data.uniform_(-stdv, stdv)
+    if uniform_initialize:
+        for m in actor.modules():
+            if isinstance(m, nn.Linear):
+                stdv = 1. / math.sqrt(m.weight.size(1))
+                nn.init.uniform_(m.weight, -stdv, stdv)
+                if m.bias is not None:
+                    m.bias.data.uniform_(-stdv, stdv)
 
-    for m in critic.modules():
-        if isinstance(m, nn.Linear):
-            stdv = 1. / math.sqrt(m.weight.size(1))
-            nn.init.uniform_(m.weight, -stdv, stdv)
-            if m.bias is not None:
-                m.bias.data.uniform_(-stdv, stdv)
+        for m in critic.modules():
+            if isinstance(m, nn.Linear):
+                stdv = 1. / math.sqrt(m.weight.size(1))
+                nn.init.uniform_(m.weight, -stdv, stdv)
+                if m.bias is not None:
+                    m.bias.data.uniform_(-stdv, stdv)
 
     return actor, critic
