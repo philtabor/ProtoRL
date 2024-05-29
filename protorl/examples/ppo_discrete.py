@@ -1,5 +1,7 @@
 import numpy as np
 from protorl.agents.ppo import PPOAgent as Agent
+from protorl.actor.ppo import PPOActor as Actor
+from protorl.learner.ppo import PPOLearner as Learner
 from protorl.loops.ppo_episode import EpisodeLoop
 from protorl.memory.generic import initialize_memory
 from protorl.utils.network_utils import make_ppo_networks
@@ -15,9 +17,9 @@ def main():
     n_epochs = 10
     horizon = 16384
     T = int(horizon // n_threads)
+    batch_size = int(T // bs)
 
     env = make_vec_envs(env_name, n_threads=n_threads, seed=0)
-    actor, critic = make_ppo_networks(env, action_space='discrete')
 
     fields = ['states', 'actions', 'rewards', 'states_',
               'mask', 'log_probs']
@@ -43,10 +45,16 @@ def main():
 
     policy = DiscretePolicy()
 
-    agent = Agent(actor, critic, memory=memory, policy=policy,
-                  action_type='discrete', N=T, n_epochs=n_epochs)
+    actor_net, critic_net = make_ppo_networks(env, action_space='discrete')
+    actor = Actor(actor_net, critic_net, 'discrete', policy)
 
-    ep_loop = EpisodeLoop(agent, env, n_threads=n_threads, clip_reward=True,
+    actor_net, critic_net = make_ppo_networks(env, action_space='discrete')
+    learner = Learner(actor_net, critic_net, 'discrete', policy)
+
+    agent = Agent(actor, learner)
+
+    ep_loop = EpisodeLoop(agent, env, memory, n_epochs, T, batch_size,
+                          n_threads=n_threads, clip_reward=True,
                           extra_functionality=[agent.anneal_policy_clip])
 
     scores, steps_array = ep_loop.run(n_games)

@@ -63,6 +63,7 @@ def calc_adv_and_returns(values, values_, rewards, dones,
     device = 'cuda:0' if T.cuda.is_available() else 'cpu'
     deltas = rewards + gamma * values_ - values
     deltas = deltas.cpu().numpy()
+    dones = dones.cpu().numpy()
     adv = [0]
     for step in reversed(range(deltas.shape[0])):
         advantage = deltas[step] +\

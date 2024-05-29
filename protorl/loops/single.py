@@ -3,10 +3,16 @@ from protorl.utils.common import clip_reward
 
 
 class EpisodeLoop:
-    def __init__(self, agent, env,
-                 load_checkpoint=False, clip_reward=False):
+    def __init__(self, agent, env, memory,
+                 sample_mode='uniform',
+                 load_checkpoint=False, clip_reward=False,
+                 prioritized=False):
         self.agent = agent
         self.env = env
+        self.memory = memory
+        self.sample_mode = sample_mode
+
+        self.prioritized = prioritized
         self.load_checkpoint = load_checkpoint
         self.clip_reward = clip_reward
 
@@ -29,9 +35,16 @@ class EpisodeLoop:
                 r = clip_reward(reward) if self.clip_reward else reward
                 if not self.load_checkpoint:
                     ep_end = done or trunc
-                    self.agent.store_transition([observation, action,
-                                                r, observation_, ep_end])
-                    self.agent.update()
+                    self.memory.store_transition([observation, action,
+                                                  r, observation_, ep_end])
+                    if self.memory.ready():
+                        transitions = \
+                            self.memory.sample_buffer(self.sample_mode)
+                        if self.prioritized:
+                            s_idx, td_errors = self.agent.update(transitions)
+                            self.memory.update_priorities(s_idx, td_errors)
+                        else:
+                            self.agent.update(transitions)
                 observation = observation_
                 n_steps += 1
             score = np.mean(score)

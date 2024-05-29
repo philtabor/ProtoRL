@@ -1,9 +1,12 @@
 import numpy as np
+import torch as T
 from protorl.memory.sum_tree import SumTree
+from protorl.utils.common import convert_arrays_to_tensors
 
 
 class GenericBuffer:
-    def __init__(self, max_size, batch_size, fields, prioritized=False):
+    def __init__(self, max_size, batch_size, fields,
+                 prioritized=False, alpha=0.5, beta=0.5):
         self.mem_size = max_size
         self.mem_cntr = 0
         self.batch_size = batch_size
@@ -30,6 +33,7 @@ class GenericBuffer:
                 arr.append(getattr(self, field)[batch])
 
         elif mode == 'batch':
+            """
             n_batches = int(self.mem_size // self.batch_size)
             indices = np.arange(self.mem_size, dtype=np.int64)
             np.random.shuffle(indices)
@@ -41,6 +45,11 @@ class GenericBuffer:
                 for field in self.fields:
                     transition.append(getattr(self, field)[batch])
                 arr.append(transition)
+            """
+            batch = np.random.choice(max_mem, self.batch_size, replace=False)
+            arr = [batch]
+            for field in self.fields:
+                arr.append(getattr(self, field)[batch])
 
         elif mode == 'all':
             arr = [getattr(self, field)[:max_mem] for field in self.fields]
@@ -52,6 +61,9 @@ class GenericBuffer:
                 arr.append(getattr(self, field)[indices])
             arr.append(weights)
 
+        device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        arr = convert_arrays_to_tensors(arr, device)
+
         return arr
 
     def ready(self):
@@ -61,7 +73,7 @@ class GenericBuffer:
 def initialize_memory(obs_shape, n_actions, max_size, batch_size,
                       n_threads=1, extra_fields=None, extra_vals=None,
                       action_space='discrete', fields=None, vals=None,
-                      prioritized=False):
+                      prioritized=False, alpha=0.5, beta=0.5):
     if n_threads > 1:
         # state_shape = [max_size, *obs_shape, n_threads]
         state_shape = [max_size, n_threads, *obs_shape]
@@ -98,6 +110,7 @@ def initialize_memory(obs_shape, n_actions, max_size, batch_size,
 
     Memory = type('ReplayBuffer', (GenericBuffer,),
                   {field: value for field, value in zip(fields, vals)})
-    memory_buffer = Memory(max_size, batch_size, fields, prioritized)
+    memory_buffer = Memory(max_size, batch_size, fields,
+                           prioritized, alpha, beta)
 
     return memory_buffer

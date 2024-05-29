@@ -10,7 +10,7 @@ from protorl.networks.head import ValueHead
 from protorl.utils.common import calculate_conv_output_dims
 
 
-def make_dqn_networks(env, use_double=False,
+def make_dqn_networks(env, hidden_layers=[512], use_double=False,
                       use_atari=False, use_dueling=False):
     algo = 'dueling_' if use_dueling else ''
     algo += 'ddqn' if use_double else 'dqn'
@@ -26,9 +26,11 @@ def make_dqn_networks(env, use_double=False,
                           input_dims=env.observation_space.shape)
     head = head_fn(n_actions=env.action_space.n,
                    input_dims=input_dims,
+                   hidden_layers=hidden_layers,
                    name=algo+'_q_head')
     target_head = head_fn(n_actions=env.action_space.n,
                           input_dims=input_dims,
+                          hidden_layers=hidden_layers,
                           name='target_'+algo+'_q_head')
     actor = Sequential(base, head)
 
@@ -37,34 +39,44 @@ def make_dqn_networks(env, use_double=False,
     return actor, target_actor
 
 
-def make_ddpg_networks(env):
+def make_ddpg_networks(env,
+                       actor_hidden_dims=[256, 256],
+                       critic_hidden_dims=[256, 256]):
     actor_base = LinearBase(name='ddpg_actor_base',
-                            input_dims=env.observation_space.shape)
+                            input_dims=env.observation_space.shape,
+                            hidden_dims=actor_hidden_dims)
 
     actor_head = DeterministicHead(n_actions=env.action_space.shape[0],
+                                   input_dims=[actor_hidden_dims[-1]],
                                    name='ddpg_actor_head')
 
     actor = Sequential(actor_base, actor_head)
 
     target_actor_base = LinearBase(name='ddpg_target_actor_base',
-                                   input_dims=env.observation_space.shape)
+                                   input_dims=env.observation_space.shape,
+                                   hidden_dims=actor_hidden_dims)
 
     target_actor_head = DeterministicHead(n_actions=env.action_space.shape[0],
+                                          input_dims=[actor_hidden_dims[-1]],
                                           name='ddpg_target_actor_head')
 
     target_actor = Sequential(target_actor_base, target_actor_head)
 
     input_dims = [env.observation_space.shape[0] + env.action_space.shape[0]]
     critic_base = CriticBase(name='ddpg_critic_base',
-                             input_dims=input_dims)
+                             input_dims=input_dims,
+                             hidden_dims=critic_hidden_dims)
 
-    critic_head = ValueHead(name='ddpg_critic_head')
+    critic_head = ValueHead(name='ddpg_critic_head',
+                            input_dims=[critic_hidden_dims[-1]])
 
     critic = Sequential(critic_base, critic_head)
 
     target_critic_base = CriticBase(name='ddpg_target_critic_base',
-                                    input_dims=input_dims)
-    target_critic_head = ValueHead(name='ddpg_target_critic_head')
+                                    input_dims=input_dims,
+                                    hidden_dims=critic_hidden_dims)
+    target_critic_head = ValueHead(name='ddpg_target_critic_head',
+                                   input_dims=[critic_hidden_dims[-1]])
 
     target_critic = Sequential(target_critic_base, target_critic_head)
 
@@ -164,15 +176,15 @@ def make_ppo_networks(env, action_space='discrete',
                                  hidden_dims=critic_hidden_dims,
                                  input_dims=env.observation_space.shape)
     critic_head = ValueHead(name='ppo_critic_head',
-                            input_dims=critic_hidden_dims[-1])
+                            input_dims=[critic_hidden_dims[-1]])
 
     if action_space == 'discrete':
         actor_head = SoftmaxHead(n_actions=env.action_space.n,
                                  name='ppo_actor_head',
-                                 input_dims=actor_hidden_dims[-1])
+                                 input_dims=[actor_hidden_dims[-1]])
     elif action_space == 'continuous':
         actor_head = BetaHead(name='ppo_actor_head',
-                              input_dims=actor_hidden_dims[-1],
+                              input_dims=[actor_hidden_dims[-1]],
                               n_actions=env.action_space.shape[0])
 
     actor = Sequential(actor_base, actor_head)

@@ -1,5 +1,7 @@
-import gym
+import gymnasium as gym
 from protorl.agents.sac import SACAgent as Agent
+from protorl.actor.sac import SACActor as Actor
+from protorl.learner.sac import SACLearner as Learner
 from protorl.loops.single import EpisodeLoop
 from protorl.memory.generic import initialize_memory
 from protorl.utils.network_utils import make_sac_networks
@@ -7,13 +9,11 @@ from protorl.policies.gaussian import GaussianPolicy
 
 
 def main():
-    env_name = 'LunarLanderContinuous-v2'
+    # env_name = 'LunarLanderContinuous-v2'
+    env_name = 'InvertedDoublePendulum-v4'
     env = gym.make(env_name)
     n_games = 1500
     bs = 256
-
-    actor, critic_1, critic_2, value, target_value = \
-        make_sac_networks(env)
 
     memory = initialize_memory(max_size=100_000,
                                obs_shape=env.observation_space.shape,
@@ -23,9 +23,20 @@ def main():
                                )
     policy = GaussianPolicy(min_action=env.action_space.low,
                             max_action=env.action_space.high)
-    agent = Agent(actor, critic_1, critic_2, value,
-                  target_value, memory, policy)
-    ep_loop = EpisodeLoop(agent, env)
+
+    actor_net, critic_1, critic_2, value, target_value = \
+        make_sac_networks(env)
+
+    actor = Actor(actor_net, critic_1, critic_2, value, target_value, policy)
+
+    actor_net, critic_1, critic_2, value, target_value = \
+        make_sac_networks(env)
+
+    learner = Learner(actor_net, critic_1, critic_2,
+                      value, target_value, policy)
+
+    agent = Agent(actor, learner)
+    ep_loop = EpisodeLoop(agent, env, memory)
 
     scores, steps_array = ep_loop.run(n_games)
 

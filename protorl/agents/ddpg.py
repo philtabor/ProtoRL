@@ -1,62 +1,33 @@
 from protorl.agents.base import Agent
-import torch as T
-import torch.nn.functional as F
 
 
 class DDPGAgent(Agent):
-    def __init__(self, actor_network, critic_network, target_actor_network,
-                 target_critic_network, memory, policy,
-                 gamma=0.99, actor_lr=1e-4, critic_lr=1e-3, tau=0.001):
-        super().__init__(memory, policy, gamma, tau)
-        self.actor = actor_network
-        self.critic = critic_network
-        self.target_actor = target_actor_network
-        self.target_critic = target_critic_network
-
-        self.networks = [net for net in [self.actor, self.critic,
-                                         self.target_actor, self.target_critic,
-                                         ]]
-
-        self.actor_optimizer = T.optim.Adam(self.actor.parameters(),
-                                            lr=actor_lr)
-        self.critic_optimizer = T.optim.Adam(self.critic.parameters(),
-                                             lr=critic_lr)
-
-        self.update_network_parameters(self.actor, self.target_actor, tau=1.0)
-        self.update_network_parameters(self.critic,
-                                       self.target_critic, tau=1.0)
+    def __init__(self, actor, learner, update_actor_interval=1):
+        super().__init__(actor, learner,)
+        self.actor = actor
+        self.learner = learner
+        self.learn_step_counter = 0
+        self.update_actor_interval = update_actor_interval
 
     def choose_action(self, observation):
-        state = T.tensor(observation, dtype=T.float, device=self.device)
-        mu = self.actor(state)
-        actions = self.policy(mu)
+        action = self.actor.choose_action(observation)
+        return action
 
-        return actions.cpu().detach().numpy()
+    def update_networks(self):
+        src = self.learner.actor
+        dest = self.learner.target_actor
+        self.learner.update_network_parameters(src, dest, tau=1.0)
 
-    def update(self):
-        if not self.memory.ready():
-            return
+        src = self.learner.critic
+        dest = self.learner.target_critic
+        self.learner.update_network_parameters(src, dest, tau=1.0)
 
-        states, actions, rewards, states_, dones = self.sample_memory()
+        if self.update_actor_interval % self.learn_step_counter == 0:
+            src = self.learner.actor
+            dest = self.actor.actor
+            self.actor.update_network_parameters(src, dest, tau=1.0)
 
-        target_actions = self.target_actor(states_)
-        critic_value_ = self.target_critic([states_, target_actions]).view(-1)
-        critic_value = self.critic([states, actions]).view(-1)
-
-        critic_value_[dones] = 0.0
-
-        target = rewards + self.gamma * critic_value_
-
-        self.critic_optimizer.zero_grad()
-        critic_loss = F.mse_loss(target, critic_value)
-        critic_loss.backward()
-        self.critic_optimizer.step()
-
-        self.actor_optimizer.zero_grad()
-        actor_loss = -self.critic([states, self.actor(states)])
-        actor_loss = T.mean(actor_loss)
-        actor_loss.backward()
-        self.actor_optimizer.step()
-
-        self.update_network_parameters(self.actor, self.target_actor)
-        self.update_network_parameters(self.critic, self.target_critic)
+    def update(self, transitions):
+        self.learner.update(transitions)
+        self.learn_step_counter += 1
+        self.update_networks()

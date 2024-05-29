@@ -3,16 +3,22 @@ from protorl.utils.common import action_adapter, clip_reward
 
 
 class EpisodeLoop:
-    def __init__(self, agent, env, n_threads=1, adapt_actions=False,
+    def __init__(self, agent, env, memory, n_epochs, T, n_batches,
+                 n_threads=1, adapt_actions=False,
                  load_checkpoint=False, clip_reward=False,
                  extra_functionality=None, seed=None):
         self.agent = agent
         self.seed = seed
         self.env = env
+        self.memory = memory
+        self.n_epochs = n_epochs
+        self.T = T
+        self.n_batches = n_batches
         self.load_checkpoint = load_checkpoint
         self.clip_reward = clip_reward
         self.n_threads = n_threads
         self.adapt_actions = adapt_actions
+        self.step_counter = 0
 
         self.functions = extra_functionality or []
 
@@ -42,17 +48,23 @@ class EpisodeLoop:
                 else:
                     act = action
                 observation_, reward, done, trunc, info = self.env.step(act)
+                self.step_counter += 1
                 score += reward
                 r = clip_reward(reward) if self.clip_reward else reward
                 mask = [0.0 if d or t else 1.0 for d, t in zip(done, trunc)]
                 if not self.load_checkpoint:
-                    self.agent.store_transition([observation, action,
-                                                r, observation_, mask,
-                                                log_prob])
-                    self.agent.update(n_steps)
+                    self.memory.store_transition([observation, action,
+                                                  r, observation_, mask,
+                                                  log_prob])
+                    if self.step_counter % self.T == 0:
+                        transitions = self.memory.sample_buffer(mode='all')
+                        for i in range(self.n_epochs):
+                            batches = [self.memory.sample_buffer(mode='batch')
+                                       for _ in range(self.n_batches)]
+                            self.agent.update(transitions, batches)
+                        self.step_counter = 0
                 observation = observation_
                 n_steps += 1
-            # score = np.mean(score)
             scores.append(np.mean(score))
             steps.append(n_steps)
 
@@ -63,7 +75,8 @@ class EpisodeLoop:
                 if not self.load_checkpoint:
                     self.agent.save_models()
                 best_score = avg_score
-            # self.handle_extra_functionality(i, n_episodes)
+            # TODO - more general way of handling the parameters
+            self.handle_extra_functionality(i, n_episodes)
         self.env.close()
         return scores, steps
 

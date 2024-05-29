@@ -1,5 +1,7 @@
 import numpy as np
 from protorl.agents.ppo import PPOAgent as Agent
+from protorl.actor.ppo import PPOActor as Actor
+from protorl.learner.ppo import PPOLearner as Learner
 from protorl.loops.ppo_episode import EpisodeLoop
 from protorl.memory.generic import initialize_memory
 from protorl.utils.network_utils import make_ppo_networks
@@ -8,16 +10,19 @@ from protorl.wrappers.vec_env import make_vec_envs
 
 
 def main():
-    env_name = 'LunarLanderContinuous-v2'
+    # env_name = 'LunarLanderContinuous-v2'
+    env_name = 'InvertedDoublePendulum-v4'
     n_games = 4000
     bs = 64
     n_threads = 8
     n_epochs = 10
     horizon = 16384
     T = int(horizon // n_threads)
+    batch_size = int(T // bs)
 
     env = make_vec_envs(env_name, n_threads=n_threads, seed=0)
-    actor, critic = make_ppo_networks(env, action_space='continuous')
+
+    print(env.observation_space.shape)
 
     fields = ['states', 'actions', 'rewards', 'states_',
               'mask', 'log_probs']
@@ -44,10 +49,18 @@ def main():
     policy = BetaPolicy(min_action=env.action_space.low[0],
                         max_action=env.action_space.high[0])
 
-    agent = Agent(actor, critic, memory=memory, policy=policy,
-                  action_type='continuous', N=T, n_epochs=n_epochs)
+    actor_net, critic_net = make_ppo_networks(env, action_space='continuous')
 
-    ep_loop = EpisodeLoop(agent, env, n_threads=n_threads, clip_reward=True,
+    actor = Actor(actor_net, critic_net, 'continuous', policy)
+
+    actor_net, critic_net = make_ppo_networks(env, action_space='continuous')
+
+    learner = Learner(actor_net, critic_net, 'continuous', policy)
+
+    agent = Agent(actor, learner)
+
+    ep_loop = EpisodeLoop(agent, env, memory, n_epochs, T, batch_size,
+                          n_threads=n_threads, clip_reward=True,
                           extra_functionality=[agent.anneal_policy_clip],
                           adapt_actions=True)
 
