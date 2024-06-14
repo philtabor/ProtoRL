@@ -9,9 +9,9 @@ setup(
     license="MIT",
     packages=find_packages(),
     install_requires=[
-        "numpy>=1.21.*",
-        "torch>=1.11.*",
-        "gym==0.26.*",
+        "numpy>=1.21",
+        "torch>=1.11",
+        "gym==0.26.2",
         "gym[box2d]",
         "atari-py==0.2.6",
         "mpi4py",
