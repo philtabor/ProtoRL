@@ -1,4 +1,18 @@
-[build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
+[project]
+name = "ProtoRL_ptabor"
+version = "0.1"
+authors = [
+  { name="Phil Tabor", email="phil@neuralnet.ai" },
+]
+description = "A PyTorch based framework for prototyping RL agents"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Linux/Mac",
+]
 
+[project.urls]
+Homepage = "https://github.com/philtabor/ProtoRL"
+Issues = "https://github.com/philtabor/ProtoRL/issues"
