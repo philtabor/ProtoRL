@@ -33,19 +33,6 @@ class GenericBuffer:
                 arr.append(getattr(self, field)[batch])
 
         elif mode == 'batch':
-            """
-            n_batches = int(self.mem_size // self.batch_size)
-            indices = np.arange(self.mem_size, dtype=np.int64)
-            np.random.shuffle(indices)
-            batches = [indices[i * self.batch_size: (i+1) * self.batch_size]
-                       for i in range(n_batches)]
-            arr = []
-            for batch in batches:
-                transition = [batch]
-                for field in self.fields:
-                    transition.append(getattr(self, field)[batch])
-                arr.append(transition)
-            """
             batch = np.random.choice(max_mem, self.batch_size, replace=False)
             arr = [batch]
             for field in self.fields:
