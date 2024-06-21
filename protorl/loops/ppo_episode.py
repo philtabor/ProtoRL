@@ -58,7 +58,7 @@ class EpisodeLoop:
                                                   log_prob])
                     if self.step_counter % self.T == 0:
                         transitions = self.memory.sample_buffer(mode='all')
-                        for i in range(self.n_epochs):
+                        for _ in range(self.n_epochs):
                             batches = [self.memory.sample_buffer(mode='batch')
                                        for _ in range(self.n_batches)]
                             self.agent.update(transitions, batches)
@@ -70,7 +70,7 @@ class EpisodeLoop:
 
             avg_score = np.mean(scores[-100:])
             print('episode {} average score {:.1f} n steps {}'.
-                  format(i+1, avg_score,  n_steps))
+                  format(i+1, avg_score, n_steps))
             if avg_score > best_score:
                 if not self.load_checkpoint:
                     self.agent.save_models()
