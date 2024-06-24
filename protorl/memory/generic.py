@@ -61,28 +61,18 @@ def initialize_memory(obs_shape, n_actions, max_size, batch_size,
                       n_threads=1, extra_fields=None, extra_vals=None,
                       action_space='discrete', fields=None, vals=None,
                       prioritized=False, alpha=0.5, beta=0.5):
-    if n_threads > 1:
-        # state_shape = [max_size, *obs_shape, n_threads]
-        state_shape = [max_size, n_threads, *obs_shape]
-        reward_shape = [max_size, n_threads]
-        done_shape = [max_size, n_threads]
 
-        if action_space == 'continuous':
-            action_space = [max_size, n_threads, n_actions]
-            a_dtype = np.float32
-        elif action_space == 'discrete':
-            action_shape = [max_size, n_threads]
-            a_dtype = np.int64
-    else:
-        state_shape = [max_size, *obs_shape]
-        reward_shape = max_size
-        done_shape = max_size
-        if action_space == 'continuous':
-            action_shape = [max_size, n_actions]
-            a_dtype = np.float32
-        elif action_space == 'discrete':
-            action_shape = max_size
-            a_dtype = np.int64
+    a_dtype = np.float32 if action_space == 'continuous' else np.int64
+    state_shape = [max_size, n_threads, *obs_shape] if n_threads > 1 else \
+                  [max_size, *obs_shape]
+    reward_shape = [max_size, n_threads] if n_threads > 1 else max_size
+    done_shape = [max_size, n_threads] if n_threads > 1 else max_size
+
+    if action_space == 'continuous':
+        action_shape = [max_size, n_threads, n_actions] if n_threads > 1 else \
+                       [max_size, n_actions]
+    elif action_space == 'discrete':
+        action_shape = [max_size, n_threads] if n_threads > 1 else max_size
 
     fields = fields or ['states', 'actions', 'rewards', 'states_', 'dones']
     vals = vals or [np.zeros(state_shape, dtype=np.float32),
