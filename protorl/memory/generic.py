@@ -24,6 +24,9 @@ class GenericBuffer:
         if self.prioritized:
             self.sum_tree.store_transition()
 
+    def update_priorities(self, indices, values):
+        self.sum_tree.update_priorities(indices, values)
+
     def sample_buffer(self, mode='uniform'):
         max_mem = min(self.mem_cntr, self.mem_size)
         if mode == 'uniform':

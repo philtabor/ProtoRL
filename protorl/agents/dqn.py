@@ -2,11 +2,13 @@ from protorl.agents.base import Agent
 
 
 class DQNAgent(Agent):
-    def __init__(self, actor, learner, replace=1000, update_actor_cnt=1):
+    def __init__(self, actor, learner, replace=1000, update_actor_cnt=1,
+                 prioritized=False):
         super().__init__(actor=actor, learner=learner)
         self.replace_target_cnt = replace
         self.learn_step_counter = 0
         self.update_actor_cnt = update_actor_cnt
+        self.prioritized = prioritized
 
     def choose_action(self, observation):
         action = self.actor.choose_action(observation)
@@ -24,6 +26,11 @@ class DQNAgent(Agent):
             self.actor.update_network_parameters(src, dest, tau=1.0)
 
     def update(self, transitions):
-        self.learner.update(transitions)
+        if self.prioritized:
+            sample_idx, td_error = self.learner.update(transitions)
+        else:
+            self.learner.update(transitions)
         self.learn_step_counter += 1
         self.update_networks()
+        if self.prioritized:
+            return sample_idx, td_error
