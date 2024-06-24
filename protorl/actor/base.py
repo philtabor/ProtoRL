@@ -2,12 +2,13 @@ import torch as T
 
 
 class Actor:
-    def __init__(self, policy, tau=0.001):
+    def __init__(self, policy, tau=0.001, device=None):
         self.policy = policy
         self.tau = tau
 
         self.networks = []
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        self.device = device or T.device('cuda:0' if T.cuda.is_available()
+                                         else 'cpu')
 
     def save_models(self):
         for network in self.networks:

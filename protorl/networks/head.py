@@ -6,8 +6,9 @@ from protorl.networks.core import NetworkCore
 
 class QHead(NetworkCore, nn.Module):
     def __init__(self, name,  n_actions,
-                 input_dims=[256], hidden_layers=[512], chkpt_dir='models'):
-        super().__init__(name=name, chkpt_dir=chkpt_dir)
+                 input_dims=[256], hidden_layers=[512], chkpt_dir='models',
+                 *args, **kwargs):
+        super().__init__(name=name, chkpt_dir=chkpt_dir, *args, **kwargs)
 
         assert len(hidden_layers) == 1, "Must supply 1 hidden layer size"
         self.fc1 = nn.Linear(*input_dims, hidden_layers[0])
@@ -23,8 +24,9 @@ class QHead(NetworkCore, nn.Module):
 
 class DuelingHead(NetworkCore, nn.Module):
     def __init__(self, name, n_actions,
-                 input_dims=[256], hidden_layers=[512], chkpt_dir='models'):
-        super().__init__(name=name, chkpt_dir=chkpt_dir)
+                 input_dims=[256], hidden_layers=[512], chkpt_dir='models',
+                 *args, **kwargs):
+        super().__init__(name=name, chkpt_dir=chkpt_dir, *args, **kwargs)
 
         assert len(hidden_layers) == 1, "Must supply 1 hidden layer size"
         self.fc1 = nn.Linear(*input_dims, hidden_layers[0])
@@ -42,8 +44,9 @@ class DuelingHead(NetworkCore, nn.Module):
 
 
 class DeterministicHead(NetworkCore, nn.Module):
-    def __init__(self, name, n_actions, chkpt_dir='models', input_dims=[256]):
-        super().__init__(name=name, chkpt_dir=chkpt_dir)
+    def __init__(self, name, n_actions, chkpt_dir='models', input_dims=[256],
+                 *args, **kwargs):
+        super().__init__(name=name, chkpt_dir=chkpt_dir, *args, **kwargs)
         self.fc1 = nn.Linear(*input_dims, n_actions)
         self.to(self.device)
 
@@ -55,8 +58,9 @@ class DeterministicHead(NetworkCore, nn.Module):
 
 class MeanAndSigmaHead(NetworkCore, nn.Module):
     def __init__(self, name, n_actions,
-                 input_dims=[256], chkpt_dir='models', std_min=1e-6):
-        super().__init__(name=name, chkpt_dir=chkpt_dir)
+                 input_dims=[256], chkpt_dir='models', std_min=1e-6,
+                 *args, **kwargs):
+        super().__init__(name=name, chkpt_dir=chkpt_dir, *args, **kwargs)
         self.std_min = std_min
         self.mu = nn.Linear(*input_dims, n_actions)
         self.sigma = nn.Linear(*input_dims, n_actions)
@@ -72,8 +76,9 @@ class MeanAndSigmaHead(NetworkCore, nn.Module):
 
 
 class ValueHead(NetworkCore, nn.Module):
-    def __init__(self, name, input_dims=[256], chkpt_dir='models'):
-        super().__init__(name=name, chkpt_dir=chkpt_dir)
+    def __init__(self, name, input_dims=[256], chkpt_dir='models',
+                 *args, **kwargs):
+        super().__init__(name=name, chkpt_dir=chkpt_dir, *args, **kwargs)
         self.v = nn.Linear(*input_dims, 1)
         self.to(self.device)
 
@@ -85,8 +90,8 @@ class ValueHead(NetworkCore, nn.Module):
 
 class SoftmaxHead(NetworkCore, nn.Module):
     def __init__(self, name, n_actions,
-                 input_dims=[256], chkpt_dir='models'):
-        super().__init__(name=name, chkpt_dir=chkpt_dir)
+                 input_dims=[256], chkpt_dir='models', *args, **kwargs):
+        super().__init__(name=name, chkpt_dir=chkpt_dir, *args, **kwargs)
         self.probs = nn.Linear(*input_dims, n_actions)
         self.to(self.device)
 
@@ -98,7 +103,7 @@ class SoftmaxHead(NetworkCore, nn.Module):
 
 class BetaHead(NetworkCore, nn.Module):
     def __init__(self, name, n_actions,
-                 input_dims=[256], chkpt_dir='models'):
+                 input_dims=[256], chkpt_dir='models', *args, **kwargs):
         super().__init__(name=name, chkpt_dir=chkpt_dir)
         self.alpha = nn.Linear(*input_dims, n_actions)
         self.beta = nn.Linear(*input_dims, n_actions)

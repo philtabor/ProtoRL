@@ -31,6 +31,8 @@ class DuelingDQNLearner(Learner):
 
         V_s, A_s = self.q_eval(states)
         V_s_, A_s_ = self.q_next(states_)
+
+
         q_pred = T.add(V_s,
                        (A_s - A_s.mean(dim=1,
                                        keepdim=True)))[indices, actions]

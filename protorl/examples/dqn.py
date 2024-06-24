@@ -43,9 +43,10 @@ def main():
     dqn_learner = Learner(q_eval, q_target,
                           prioritized=use_prioritization, lr=1e-4)
 
-    agent = Agent(dqn_actor, dqn_learner)
+    agent = Agent(dqn_actor, dqn_learner, prioritized=use_prioritization)
     sample_mode = 'prioritized' if use_prioritization else 'uniform'
-    ep_loop = EpisodeLoop(agent, env, memory, sample_mode=sample_mode)
+    ep_loop = EpisodeLoop(agent, env, memory, sample_mode=sample_mode,
+                          prioritized=use_prioritization)
     scores, steps_array = ep_loop.run(n_games)
 
 

@@ -3,8 +3,8 @@ import torch as T
 
 
 class DuelingDQNActor(Actor):
-    def __init__(self, online_net, target_net, policy, tau=1.0):
-        super().__init__(policy=policy, tau=tau)
+    def __init__(self, online_net, target_net, policy, tau=1.0, device=None):
+        super().__init__(policy=policy, tau=tau, device=device)
         self.q_eval = online_net
         self.q_next = target_net
         self.networks = [net for net in [self.q_eval, self.q_next]]

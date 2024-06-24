@@ -11,7 +11,7 @@ from protorl.utils.common import calculate_conv_output_dims
 
 
 def make_dqn_networks(env, hidden_layers=[512], use_double=False,
-                      use_atari=False, use_dueling=False):
+                      use_atari=False, use_dueling=False, *args, **kwargs):
     algo = 'dueling_' if use_dueling else ''
     algo += 'ddqn' if use_double else 'dqn'
 
@@ -19,19 +19,21 @@ def make_dqn_networks(env, hidden_layers=[512], use_double=False,
     base_fn = AtariBase if use_atari else LinearBase
 
     input_dims = calculate_conv_output_dims() if use_atari else [256]
-
     base = base_fn(name=algo+'_q_base',
-                   input_dims=env.observation_space.shape)
+                   input_dims=env.observation_space.shape, *args, **kwargs)
     target_base = base_fn(name='target_'+algo+'_q_base',
-                          input_dims=env.observation_space.shape)
+                          input_dims=env.observation_space.shape,
+                          *args, **kwargs)
     head = head_fn(n_actions=env.action_space.n,
                    input_dims=input_dims,
                    hidden_layers=hidden_layers,
-                   name=algo+'_q_head')
+                   name=algo+'_q_head',
+                   *args, **kwargs)
     target_head = head_fn(n_actions=env.action_space.n,
                           input_dims=input_dims,
                           hidden_layers=hidden_layers,
-                          name='target_'+algo+'_q_head')
+                          name='target_'+algo+'_q_head',
+                          *args, **kwargs)
     actor = Sequential(base, head)
 
     target_actor = Sequential(target_base, target_head)
