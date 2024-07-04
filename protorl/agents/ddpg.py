@@ -16,11 +16,11 @@ class DDPGAgent(Agent):
     def update_networks(self):
         src = self.learner.actor
         dest = self.learner.target_actor
-        self.learner.update_network_parameters(src, dest, tau=1.0)
+        self.learner.update_network_parameters(src, dest)
 
         src = self.learner.critic
         dest = self.learner.target_critic
-        self.learner.update_network_parameters(src, dest, tau=1.0)
+        self.learner.update_network_parameters(src, dest)
 
         if self.update_actor_interval % self.learn_step_counter == 0:
             src = self.learner.actor
