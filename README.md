@@ -35,7 +35,7 @@ git clone https://github.com/philtabor/protorl
 
 pip install --upgrade pip
 
-pip install -e .
+pip install .
 
 python
 
