@@ -12,5 +12,5 @@ class DQNActor(Actor):
     def choose_action(self, observation):
         state = T.tensor(observation, dtype=T.float).to(self.device)
         q_values = self.q_eval(state)
-        action = self.policy(q_values)
+        action = self.policy(q_values).item()
         return action

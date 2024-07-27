@@ -9,10 +9,11 @@ from protorl.memory.generic import initialize_memory
 
 
 def main():
-    env_name = 'CartPole-v1'
+    # env_name = 'CartPole-v1'
     # env_name = 'PongNoFrameskip-v4'
+    env_name = 'LunarLander-v2'
     use_prioritization = True
-    use_double = False
+    use_double = True
     use_dueling = False
     use_atari = False
     env = make_env(env_name, use_atari=use_atari)
@@ -21,7 +22,7 @@ def main():
     # 0.3, 0.5 works okay for cartpole
     # 0.25, 0.25 doesn't seem to work
     # 0.25, 0.75 doesn't work
-    memory = initialize_memory(max_size=100_000,
+    memory = initialize_memory(max_size=50_000,
                                obs_shape=env.observation_space.shape,
                                batch_size=bs,
                                n_actions=env.action_space.n,

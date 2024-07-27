@@ -23,5 +23,4 @@ class DDPGActor(Actor):
         state = T.tensor(observation, dtype=T.float, device=self.device)
         mu = self.actor(state)
         actions = self.policy(mu)
-
         return actions.cpu().detach().numpy()

@@ -22,8 +22,6 @@ def main():
 
     env = make_vec_envs(env_name, n_threads=n_threads, seed=0)
 
-    print(env.observation_space.shape)
-
     fields = ['states', 'actions', 'rewards', 'states_',
               'mask', 'log_probs']
     state_shape = (T, n_threads, *env.observation_space.shape)

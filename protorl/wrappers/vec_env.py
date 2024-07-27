@@ -1,10 +1,9 @@
 from mpi4py import MPI
 import multiprocessing as mp
-import gym
+import gymnasium as gym
+from gymnasium.wrappers import FrameStack
 import numpy as np
 import torch as T
-from protorl.wrappers.atari import RepeatActionAndMaxFrame
-from protorl.wrappers.atari import PreprocessFrame, StackFrames
 
 
 def worker(remote, parent_remote, env_fn_wrapper):
@@ -114,16 +113,14 @@ class CloudpickleWrapper:
         self.x = pickle.loads(ob)
 
 
-def make_single_env(env_id, rank, use_atari, repeat=4,
-                    clip_rewards=False, no_ops=0, fire_first=False,
-                    shape=(84, 84, 1), **kwargs):
+
+def make_single_env(env_id, use_atari, repeat=4,
+                    no_ops=0, **kwargs):
     def _thunk():
         env = gym.make(env_id, **kwargs)
         if use_atari:
-            env = RepeatActionAndMaxFrame(env, repeat, clip_rewards,
-                                          no_ops, fire_first)
-            env = PreprocessFrame(shape, env)
-            env = StackFrames(env, repeat)
+            env = gym.wrappers.AtariPreprocessing(env, noop_max=no_ops, scale_obs=True)
+            env = FrameStack(env, num_stack=repeat)
         return env
     return _thunk
 
