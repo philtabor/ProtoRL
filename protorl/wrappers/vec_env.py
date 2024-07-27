@@ -129,8 +129,8 @@ def make_vec_envs(env_name, use_atari=False, seed=None, n_threads=2, **kwargs):
     mpi_rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
     seed = seed + 10000 * mpi_rank if seed is not None else None
     set_global_seeds(seed)
-    envs = [make_single_env(env_name, i, use_atari, **kwargs)
-            for i in range(n_threads)]
+    envs = [make_single_env(env_name, use_atari, **kwargs)
+            for _ in range(n_threads)]
 
     envs = SubprocVecEnv(envs, seed)
 
