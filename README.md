@@ -119,4 +119,5 @@ elegant than the current procedural implementation.
 
 ## Release Notes
 v0.1: First stable release
+
 v0.2: Migrate from Gym to Gymnasium
