@@ -10,7 +10,7 @@ Out of the box, ProtoRL implements the following algorithms:
 - **DDPG, TD3, SAC, PPO** for single agents with a continuous action space
 - **Prioritized Experience Replay** for any off policy RL algorithm
 
-Note that this is a v0.2 release, and more agents are coming. I am working on developing
+Note that this is a v0.3 release, and more agents are coming. I am working on developing
 open source versions of:
 - **Distributed Prioritized Experience Replay (APE-X)**
 - **Random Network Distillation (RND)**
@@ -121,3 +121,5 @@ elegant than the current procedural implementation.
 v0.1: First stable release
 
 v0.2: Migrate from Gym to Gymnasium
+
+v0.3: Implement proper model checkpointing for resuming training

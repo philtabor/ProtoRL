@@ -9,7 +9,20 @@ class PPOActor(Actor):
 
         self.actor = actor_net
         self.critic = critic_net
-        self.networks = [net for net in [self.actor, self.critic]]
+
+    def save_models(self, fname=None):
+        fname = fname or 'models/ppo_' + self.action_type + '_actor'
+        checkpoint = {
+            'actor_model_state_dict': self.actor.state_dict(),
+            'critic_model_state_dict': self.critic.state_dict(),
+        }
+        T.save(checkpoint, fname)
+
+    def load_models(self, fname=None):
+        fname = fname or 'models/ppo_' + self.action_type + '_actor'
+        checkpoint = T.load(fname)
+        self.actor.load_state_dict(checkpoint['actor_model_state_dict'])
+        self.critic.load_state_dict(checkpoint['critic_model_state_dict'])
 
     def choose_action(self, observation):
         state = T.tensor(observation, dtype=T.float, device=self.device)

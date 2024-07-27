@@ -36,7 +36,7 @@ def main():
                       value, target_value, policy)
 
     agent = Agent(actor, learner)
-    ep_loop = EpisodeLoop(agent, env, memory)
+    ep_loop = EpisodeLoop(agent, env, memory, load_checkpoint=False, evaluate=False)
 
     scores, steps_array = ep_loop.run(n_games)
 

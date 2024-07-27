@@ -12,27 +12,20 @@ from protorl.utils.common import calculate_conv_output_dims
 
 def make_dqn_networks(env, hidden_layers=[512], use_double=False,
                       use_atari=False, use_dueling=False, *args, **kwargs):
-    algo = 'dueling_' if use_dueling else ''
-    algo += 'ddqn' if use_double else 'dqn'
-
     head_fn = DuelingHead if use_dueling else QHead
     base_fn = AtariBase if use_atari else LinearBase
 
     input_dims = calculate_conv_output_dims() if use_atari else [256]
-    base = base_fn(name=algo+'_q_base',
-                   input_dims=env.observation_space.shape, *args, **kwargs)
-    target_base = base_fn(name='target_'+algo+'_q_base',
-                          input_dims=env.observation_space.shape,
+    base = base_fn(input_dims=env.observation_space.shape, *args, **kwargs)
+    target_base = base_fn(input_dims=env.observation_space.shape,
                           *args, **kwargs)
     head = head_fn(n_actions=env.action_space.n,
                    input_dims=input_dims,
                    hidden_layers=hidden_layers,
-                   name=algo+'_q_head',
                    *args, **kwargs)
     target_head = head_fn(n_actions=env.action_space.n,
                           input_dims=input_dims,
                           hidden_layers=hidden_layers,
-                          name='target_'+algo+'_q_head',
                           *args, **kwargs)
     actor = Sequential(base, head)
 
@@ -44,41 +37,33 @@ def make_dqn_networks(env, hidden_layers=[512], use_double=False,
 def make_ddpg_networks(env,
                        actor_hidden_dims=[256, 256],
                        critic_hidden_dims=[256, 256]):
-    actor_base = LinearBase(name='ddpg_actor_base',
-                            input_dims=env.observation_space.shape,
+    actor_base = LinearBase(input_dims=env.observation_space.shape,
                             hidden_dims=actor_hidden_dims)
 
     actor_head = DeterministicHead(n_actions=env.action_space.shape[0],
-                                   input_dims=[actor_hidden_dims[-1]],
-                                   name='ddpg_actor_head')
+                                   input_dims=[actor_hidden_dims[-1]])
 
     actor = Sequential(actor_base, actor_head)
 
-    target_actor_base = LinearBase(name='ddpg_target_actor_base',
-                                   input_dims=env.observation_space.shape,
+    target_actor_base = LinearBase(input_dims=env.observation_space.shape,
                                    hidden_dims=actor_hidden_dims)
 
     target_actor_head = DeterministicHead(n_actions=env.action_space.shape[0],
-                                          input_dims=[actor_hidden_dims[-1]],
-                                          name='ddpg_target_actor_head')
+                                          input_dims=[actor_hidden_dims[-1]])
 
     target_actor = Sequential(target_actor_base, target_actor_head)
 
     input_dims = [env.observation_space.shape[0] + env.action_space.shape[0]]
-    critic_base = CriticBase(name='ddpg_critic_base',
-                             input_dims=input_dims,
+    critic_base = CriticBase(input_dims=input_dims,
                              hidden_dims=critic_hidden_dims)
 
-    critic_head = ValueHead(name='ddpg_critic_head',
-                            input_dims=[critic_hidden_dims[-1]])
+    critic_head = ValueHead(input_dims=[critic_hidden_dims[-1]])
 
     critic = Sequential(critic_base, critic_head)
 
-    target_critic_base = CriticBase(name='ddpg_target_critic_base',
-                                    input_dims=input_dims,
+    target_critic_base = CriticBase(input_dims=input_dims,
                                     hidden_dims=critic_hidden_dims)
-    target_critic_head = ValueHead(name='ddpg_target_critic_head',
-                                   input_dims=[critic_hidden_dims[-1]])
+    target_critic_head = ValueHead(input_dims=[critic_hidden_dims[-1]])
 
     target_critic = Sequential(target_critic_base, target_critic_head)
 
@@ -86,49 +71,40 @@ def make_ddpg_networks(env,
 
 
 def make_td3_networks(env):
-    actor_base = LinearBase(name='td3_actor_base', hidden_dims=[400, 300],
+    actor_base = LinearBase(hidden_dims=[400, 300],
                             input_dims=env.observation_space.shape)
 
     actor_head = DeterministicHead(n_actions=env.action_space.shape[0],
-                                   input_dims=[300],
-                                   name='td3_actor_head')
+                                   input_dims=[300])
     actor = Sequential(actor_base, actor_head)
 
-    target_actor_base = LinearBase(name='td3_target_actor_base',
-                                   hidden_dims=[400, 300],
+    target_actor_base = LinearBase(hidden_dims=[400, 300],
                                    input_dims=env.observation_space.shape)
 
     target_actor_head = DeterministicHead(n_actions=env.action_space.shape[0],
-                                          input_dims=[300],
-                                          name='td3_target_actor_head')
+                                          input_dims=[300])
     target_actor = Sequential(target_actor_base, target_actor_head)
 
     input_dims = [env.observation_space.shape[0] + env.action_space.shape[0]]
-    critic_base_1 = CriticBase(name='td3_critic_1_base',
-                               hidden_dims=[400, 300],
+    critic_base_1 = CriticBase(hidden_dims=[400, 300],
                                input_dims=input_dims)
-    critic_head_1 = ValueHead(name='td3_critic_1_head', input_dims=[300])
+    critic_head_1 = ValueHead(input_dims=[300])
 
     critic_1 = Sequential(critic_base_1, critic_head_1)
 
-    critic_base_2 = CriticBase(name='td3_critic_2_base',
-                               hidden_dims=[400, 300],
+    critic_base_2 = CriticBase(hidden_dims=[400, 300],
                                input_dims=input_dims)
-    critic_head_2 = ValueHead(name='td3_critic_2_head', input_dims=[300])
+    critic_head_2 = ValueHead(input_dims=[300])
     critic_2 = Sequential(critic_base_2, critic_head_2)
 
-    target_critic_1_base = CriticBase(name='td3_target_critic_1_base',
-                                      input_dims=input_dims,
+    target_critic_1_base = CriticBase(input_dims=input_dims,
                                       hidden_dims=[400, 300])
-    target_critic_1_head = ValueHead(name='td3_target_critic_1_head',
-                                     input_dims=[300])
+    target_critic_1_head = ValueHead(input_dims=[300])
     target_critic_1 = Sequential(target_critic_1_base, target_critic_1_head)
 
-    target_critic_2_base = CriticBase(name='td3_target_critic_2_base',
-                                      input_dims=input_dims,
+    target_critic_2_base = CriticBase(input_dims=input_dims,
                                       hidden_dims=[400, 300])
-    target_critic_2_head = ValueHead(name='td3_target_critic_2_head',
-                                     input_dims=[300])
+    target_critic_2_head = ValueHead(input_dims=[300])
     target_critic_2 = Sequential(target_critic_2_base, target_critic_2_head)
 
     return actor, critic_1, critic_2, target_actor,\
@@ -136,57 +112,45 @@ def make_td3_networks(env):
 
 
 def make_sac_networks(env):
-    actor_base = LinearBase(name='sac_actor_base',
-                            input_dims=env.observation_space.shape)
+    actor_base = LinearBase(input_dims=env.observation_space.shape)
 
-    actor_head = MeanAndSigmaHead(n_actions=env.action_space.shape[0],
-                                  name='sac_actor_head')
+    actor_head = MeanAndSigmaHead(n_actions=env.action_space.shape[0])
     actor = Sequential(actor_base, actor_head)
 
     input_dims = [env.observation_space.shape[0] + env.action_space.shape[0]]
-    critic_base_1 = CriticBase(name='sac_critic_1_base',
-                               input_dims=input_dims)
-    critic_head_1 = ValueHead(name='sac_critic_1_head')
+    critic_base_1 = CriticBase(input_dims=input_dims)
+    critic_head_1 = ValueHead()
     critic_1 = Sequential(critic_base_1, critic_head_1)
 
-    critic_base_2 = CriticBase(name='sac_critic_2_base',
-                               input_dims=input_dims)
-    critic_head_2 = ValueHead(name='sac_critic_2_head')
+    critic_base_2 = CriticBase(input_dims=input_dims)
+    critic_head_2 = ValueHead()
     critic_2 = Sequential(critic_base_2, critic_head_2)
 
-    value_base = LinearBase(name='sac_value_base',
-                            input_dims=env.observation_space.shape)
-    value_head = ValueHead(name='sac_value_head')
+    value_base = LinearBase(input_dims=env.observation_space.shape)
+    value_head = ValueHead()
     value = Sequential(value_base, value_head)
 
-    target_value_base = LinearBase(name='sac_target_value_base',
-                                   input_dims=env.observation_space.shape)
-    target_value_head = ValueHead(name='sac_target_value_head')
+    target_value_base = LinearBase(input_dims=env.observation_space.shape)
+    target_value_head = ValueHead()
     target_value = Sequential(target_value_base, target_value_head)
 
     return actor, critic_1, critic_2, value, target_value
 
 
-def make_ppo_networks(env, action_space='discrete',
-                      actor_hidden_dims=[128, 128],
+def make_ppo_networks(env, action_space, actor_hidden_dims=[128, 128],
                       critic_hidden_dims=[128, 128],
                       uniform_initialize=True):
-    actor_base = LinearTanhBase(name='ppo_actor_base',
-                                input_dims=env.observation_space.shape,
+    actor_base = LinearTanhBase(input_dims=env.observation_space.shape,
                                 hidden_dims=actor_hidden_dims)
-    critic_base = LinearTanhBase(name='ppo_critic_base',
-                                 hidden_dims=critic_hidden_dims,
+    critic_base = LinearTanhBase(hidden_dims=critic_hidden_dims,
                                  input_dims=env.observation_space.shape)
-    critic_head = ValueHead(name='ppo_critic_head',
-                            input_dims=[critic_hidden_dims[-1]])
+    critic_head = ValueHead(input_dims=[critic_hidden_dims[-1]])
 
     if action_space == 'discrete':
         actor_head = SoftmaxHead(n_actions=env.action_space.n,
-                                 name='ppo_actor_head',
                                  input_dims=[actor_hidden_dims[-1]])
     elif action_space == 'continuous':
-        actor_head = BetaHead(name='ppo_actor_head',
-                              input_dims=[actor_hidden_dims[-1]],
+        actor_head = BetaHead(input_dims=[actor_hidden_dims[-1]],
                               n_actions=env.action_space.shape[0])
 
     actor = Sequential(actor_base, actor_head)

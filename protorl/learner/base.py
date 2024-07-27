@@ -9,14 +9,10 @@ class Learner:
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
 
     def save_models(self):
-        for network in self.networks:
-            for x in network:
-                x.save_checkpoint()
+        raise NotImplementedError
 
     def load_models(self):
-        for network in self.networks:
-            for x in network:
-                x.load_checkpoint()
+        raise NotImplementedError
 
     def update_network_parameters(self, src, dest, tau=None):
         if tau is None:
@@ -24,5 +20,5 @@ class Learner:
         for param, target in zip(src.parameters(), dest.parameters()):
             target.data.copy_(tau * param.data + (1 - tau) * target.data)
 
-    def update(self, transitions):
+    def update(self, *args):
         raise NotImplementedError

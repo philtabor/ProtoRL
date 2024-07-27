@@ -12,10 +12,25 @@ class DQNLearner(Learner):
 
         self.q_eval = eval_net
         self.q_next = target_net
-        self.networks = [net for net in [self.q_eval, self.q_next]]
 
         self.optimizer = T.optim.Adam(self.q_eval.parameters(), lr=lr)
         self.loss = T.nn.MSELoss()
+
+    def save_models(self, fname=None):
+        fname = fname or 'models/dqn_learner'
+        checkpoint = {
+            'q_eval_model_state_dict': self.q_eval.state_dict(),
+            'q_next_model_state_dict': self.q_next.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+        }
+        T.save(checkpoint, fname)
+
+    def load_models(self, fname=None):
+        fname = fname or 'models/dqn_learner'
+        checkpoint = T.load(fname)
+        self.q_eval.load_state_dict(checkpoint['q_eval_model_state_dict'])
+        self.q_next.load_state_dict(checkpoint['q_next_model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     def update(self, transitions):
         self.optimizer.zero_grad()

@@ -5,9 +5,8 @@ from protorl.networks.core import NetworkCore
 
 
 class CriticBase(NetworkCore, nn.Module):
-    def __init__(self, name, input_dims, hidden_dims=[256, 256],
-                 chkpt_dir='models', *args, **kwargs):
-        super().__init__(name=name, chkpt_dir=chkpt_dir)
+    def __init__(self, input_dims, hidden_dims=[256, 256], *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.fc1 = nn.Linear(*input_dims, hidden_dims[0])
         self.fc2 = nn.Linear(hidden_dims[0], hidden_dims[1])
         self.to(self.device)
@@ -22,9 +21,8 @@ class CriticBase(NetworkCore, nn.Module):
 
 
 class LinearBase(NetworkCore, nn.Module):
-    def __init__(self, name, input_dims, hidden_dims=[256, 256],
-                 chkpt_dir='models', *args, **kwargs):
-        super().__init__(name=name, chkpt_dir=chkpt_dir, *args, **kwargs)
+    def __init__(self, input_dims, hidden_dims=[256, 256], *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.fc1 = nn.Linear(*input_dims, hidden_dims[0])
         self.fc2 = nn.Linear(hidden_dims[0], hidden_dims[1])
         self.to(self.device)
@@ -36,10 +34,10 @@ class LinearBase(NetworkCore, nn.Module):
 
 
 class AtariBase(NetworkCore, nn.Module):
-    def __init__(self, name, input_dims, channels=(32, 64, 64),
+    def __init__(self, input_dims, channels=(32, 64, 64),
                  kernels=(8, 4, 3), strides=(4, 2, 1),
-                 chkpt_dir='models', *args, **kwargs):
-        super().__init__(name=name, chkpt_dir=chkpt_dir, *args, **kwargs)
+                 *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         assert len(channels) == 3, "Must supply 3 channels for AtariBase"
         assert len(kernels) == 3, "Must supply 3 kernels for AtariBase"
@@ -70,9 +68,8 @@ class AtariBase(NetworkCore, nn.Module):
 
 
 class LinearTanhBase(NetworkCore, nn.Module):
-    def __init__(self, name, input_dims, hidden_dims=[256, 256],
-                 chkpt_dir='models', *args, **kwargs):
-        super().__init__(name=name, chkpt_dir=chkpt_dir, *args, **kwargs)
+    def __init__(self, input_dims, hidden_dims=[256, 256], *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.fc1 = nn.Linear(*input_dims, hidden_dims[0])
         self.fc2 = nn.Linear(hidden_dims[0], hidden_dims[1])
         self.to(self.device)
