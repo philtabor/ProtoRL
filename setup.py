@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="protorl",
-    version="0.1.1",
+    version="0.2.0",
     author="Phil Tabor",
     author_email="phil@neuralnet.ai",
     url="https://www.github.com/philtabor/protorl",
