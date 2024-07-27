@@ -27,7 +27,7 @@ def main():
     actor_net, critic_1, critic_2, value, target_value = \
         make_sac_networks(env)
 
-    actor = Actor(actor_net, critic_1, critic_2, value, target_value, policy)
+    actor = Actor(actor_net, policy)
 
     actor_net, critic_1, critic_2, value, target_value = \
         make_sac_networks(env)
