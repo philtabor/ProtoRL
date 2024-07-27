@@ -6,23 +6,25 @@ from protorl.utils.common import convert_arrays_to_tensors
 
 class GenericBuffer:
     def __init__(self, max_size, batch_size, fields,
-                 prioritized=False, alpha=0.5, beta=0.5):
+                 prioritized=False, alpha=0.5, beta=0.5,
+                 device=None, warmup=0):
         self.mem_size = max_size
         self.mem_cntr = 0
         self.batch_size = batch_size
         self.fields = fields
         self.prioritized = prioritized
-
+        self.device = device
+        self.warmup = warmup
         if prioritized:
-            self.sum_tree = SumTree(max_size, batch_size)
+            self.sum_tree = SumTree(max_size, batch_size, alpha, beta)
 
-    def store_transition(self, items):
+    def store_transition(self, items, vals=None):
         index = self.mem_cntr % self.mem_size
         for item, field in zip(items, self.fields):
             getattr(self, field)[index] = item
         self.mem_cntr += 1
         if self.prioritized:
-            self.sum_tree.store_transition()
+            self.sum_tree.store_transition(vals)
 
     def update_priorities(self, indices, values):
         self.sum_tree.update_priorities(indices, values)
@@ -51,19 +53,21 @@ class GenericBuffer:
                 arr.append(getattr(self, field)[indices])
             arr.append(weights)
 
-        device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
-        arr = convert_arrays_to_tensors(arr, device)
+        device = self.device or \
+            T.device('cuda:0' if T.cuda.is_available() else 'cpu')
 
+        arr = convert_arrays_to_tensors(arr, device)
         return arr
 
     def ready(self):
-        return self.mem_cntr >= self.batch_size
+        return self.mem_cntr >= self.batch_size and self.mem_cntr >= self.warmup
 
 
 def initialize_memory(obs_shape, n_actions, max_size, batch_size,
                       n_threads=1, extra_fields=None, extra_vals=None,
                       action_space='discrete', fields=None, vals=None,
-                      prioritized=False, alpha=0.5, beta=0.5):
+                      prioritized=False, alpha=0.5, beta=0.5, device=None,
+                      warmup=0):
 
     a_dtype = np.float32 if action_space == 'continuous' else np.int64
     state_shape = [max_size, n_threads, *obs_shape] if n_threads > 1 else \
@@ -91,6 +95,6 @@ def initialize_memory(obs_shape, n_actions, max_size, batch_size,
     Memory = type('ReplayBuffer', (GenericBuffer,),
                   {field: value for field, value in zip(fields, vals)})
     memory_buffer = Memory(max_size, batch_size, fields,
-                           prioritized, alpha, beta)
+                           prioritized, alpha, beta, device, warmup)
 
     return memory_buffer
