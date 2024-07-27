@@ -1,6 +1,6 @@
-from protorl.agents.dqn import DQNAgent as Agent
-from protorl.actor.dqn import DQNActor as Actor
-from protorl.learner.dqn import DQNLearner as Learner
+from protorl.agents.dueling import DuelingDQNAgent as Agent
+from protorl.actor.dueling import DuelingDQNActor as Actor
+from protorl.learner.dueling import DuelingDQNLearner as Learner
 from protorl.loops.single import EpisodeLoop
 from protorl.policies.epsilon_greedy import EpsilonGreedyPolicy
 from protorl.utils.network_utils import make_dqn_networks
@@ -14,7 +14,7 @@ def main():
     # env_name = 'LunarLander-v2'
     use_prioritization = True
     use_double = True
-    use_dueling = False
+    use_dueling = True
     use_atari = False
     env = make_env(env_name, use_atari=use_atari)
     n_games = 1500

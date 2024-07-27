@@ -27,7 +27,7 @@ def main():
     actor_net, critic_1, critic_2, value, target_value = \
         make_sac_networks(env)
 
-    actor = Actor(actor_net, critic_1, critic_2, value, target_value, policy)
+    actor = Actor(actor_net, policy)
 
     actor_net, critic_1, critic_2, value, target_value = \
         make_sac_networks(env)
@@ -36,7 +36,7 @@ def main():
                       value, target_value, policy)
 
     agent = Agent(actor, learner)
-    ep_loop = EpisodeLoop(agent, env, memory)
+    ep_loop = EpisodeLoop(agent, env, memory, load_checkpoint=False, evaluate=False)
 
     scores, steps_array = ep_loop.run(n_games)
 

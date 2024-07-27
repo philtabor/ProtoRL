@@ -10,7 +10,7 @@ Out of the box, ProtoRL implements the following algorithms:
 - **DDPG, TD3, SAC, PPO** for single agents with a continuous action space
 - **Prioritized Experience Replay** for any off policy RL algorithm
 
-Note that this is a v0.1 release, and more agents are coming. I am working on developing
+Note that this is a v0.3 release, and more agents are coming. I am working on developing
 open source versions of:
 - **Distributed Prioritized Experience Replay (APE-X)**
 - **Random Network Distillation (RND)**
@@ -20,8 +20,8 @@ open source versions of:
 ## Requirements
 ProtoRL is built around Python3.8 and a minimal set of dependencies. 
 
-We utilize the OpenAI Gym (v0.26), PyTorch (v1.11) and Numpy (v1.21). Support
-for the Atari environments comes from atari-py (v0.2.6). Support for some of the
+We utilize Gymnasium, PyTorch and Numpy. Support
+for the Atari environments comes from atari-py. Support for some of the
 control environments comes from the Box2D dependency.
 
 ## Recommended Setup
@@ -35,7 +35,7 @@ git clone https://github.com/philtabor/protorl
 
 pip install --upgrade pip
 
-pip install -e .
+pip install .
 
 python
 
@@ -112,8 +112,6 @@ step function for single threaded agents (this should probably change).
 ## TODO
 - Buried within the code is functionality for creating networks using a factory. This is more
 elegant than the current procedural implementation.
-- Rethink how the framework handles single threaded vs. multithreaded agents.
-- Implement an actor learner type architecture to support newer Deep Mind algorithms.
 - Incorporate multi agent algorithms and environments.
 - Implement an environment spec to handle environment contingent processing.
 - Implement basic command line interface.
@@ -121,3 +119,7 @@ elegant than the current procedural implementation.
 
 ## Release Notes
 v0.1: First stable release
+
+v0.2: Migrate from Gym to Gymnasium
+
+v0.3: Implement proper model checkpointing for resuming training

@@ -6,7 +6,7 @@ class EpisodeLoop:
     def __init__(self, agent, env, memory, n_epochs, T, n_batches,
                  n_threads=1, adapt_actions=False,
                  load_checkpoint=False, clip_reward=False,
-                 extra_functionality=None, seed=None):
+                 evaluate=False, extra_functionality=None, seed=None):
         self.agent = agent
         self.seed = seed
         self.env = env
@@ -15,6 +15,7 @@ class EpisodeLoop:
         self.T = T
         self.n_batches = n_batches
         self.load_checkpoint = load_checkpoint
+        self.evaluate = evaluate
         self.clip_reward = clip_reward
         self.n_threads = n_threads
         self.adapt_actions = adapt_actions
@@ -35,10 +36,10 @@ class EpisodeLoop:
             done = [False] * self.n_threads
             trunc = [False] * self.n_threads
             if self.seed is not None:
-                observation, info = self.env.reset(self.seed)
+                observation, _ = self.env.reset(self.seed)
                 self.seed = None
             else:
-                observation, info = self.env.reset()
+                observation, _ = self.env.reset()
             score = [0] * self.n_threads
             while not (any(done) or any(trunc)):
                 action, log_prob = self.agent.choose_action(observation)
@@ -47,12 +48,12 @@ class EpisodeLoop:
                         action.shape)
                 else:
                     act = action
-                observation_, reward, done, trunc, info = self.env.step(act)
+                observation_, reward, done, trunc, _ = self.env.step(act)
                 self.step_counter += 1
                 score += reward
                 r = clip_reward(reward) if self.clip_reward else reward
                 mask = [0.0 if d or t else 1.0 for d, t in zip(done, trunc)]
-                if not self.load_checkpoint:
+                if not self.evaluate:
                     self.memory.store_transition([observation, action,
                                                   r, observation_, mask,
                                                   log_prob])
@@ -72,7 +73,7 @@ class EpisodeLoop:
             print('episode {} average score {:.1f} n steps {}'.
                   format(i+1, avg_score, n_steps))
             if avg_score > best_score:
-                if not self.load_checkpoint:
+                if not self.evaluate:
                     self.agent.save_models()
                 best_score = avg_score
             # TODO - more general way of handling the parameters

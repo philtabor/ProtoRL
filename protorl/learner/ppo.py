@@ -23,6 +23,24 @@ class PPOLearner(Learner):
         self.actor_optimizer = T.optim.Adam(self.actor.parameters(), lr=lr)
         self.critic_optimizer = T.optim.Adam(self.critic.parameters(), lr=lr)
 
+    def save_models(self, fname=None):
+        fname = fname or 'models/ppo_' + self.action_type + '_learner'
+        checkpoint = {
+            'actor_model_state_dict': self.actor.state_dict(),
+            'critic_model_state_dict': self.critic.state_dict(),
+            'actor_optimizer_state_dict': self.actor_optimizer.state_dict(),
+            'critic_optimizer_state_dict': self.critic_optimizer.state_dict(),
+        }
+        T.save(checkpoint, fname)
+
+    def load_models(self, fname=None):
+        fname = fname or 'models/ppo_' + self.action_type + '_learner'
+        checkpoint = T.load(fname)
+        self.actor.load_state_dict(checkpoint['actor_model_state_dict'])
+        self.critic.load_state_dict(checkpoint['critic_model_state_dict'])
+        self.actor_optimizer.load_state_dict(checkpoint['actor_optimizer_state_dict'])
+        self.critic_optimizer.load_state_dict(checkpoint['critic_optimizer_state_dict'])
+
     def update(self, transitions, batches):
         s, a, r, s_, d, lp = transitions
         # s, s_, r = convert_arrays_to_tensors([s, s_, r], device=self.device)
@@ -35,7 +53,7 @@ class PPOLearner(Learner):
 
         for batch in batches:
             indices, states, actions, rewards, states_, dones, old_probs =\
-                batch  # convert_arrays_to_tensors(batch, device=self.device)
+                batch
             if self.action_type == 'continuous':
                 alpha, beta = self.actor(states)
                 _, new_probs, entropy = self.policy(alpha, beta,

@@ -1,5 +1,5 @@
 import numpy as np
-import gym
+import gymnasium as gym
 
 
 class SingleThreadedWrapper(gym.Wrapper):
@@ -18,6 +18,6 @@ class SingleThreadedWrapper(gym.Wrapper):
 
 class BatchDimensionWrapper(gym.ObservationWrapper):
     def observation(self, observation):
-        observation = observation[np.newaxis, :]
+        # observation = observation[np.newaxis, :]
 
-        return observation
+        return np.array([observation])

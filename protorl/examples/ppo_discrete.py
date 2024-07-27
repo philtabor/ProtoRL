@@ -55,7 +55,8 @@ def main():
 
     ep_loop = EpisodeLoop(agent, env, memory, n_epochs, T, batch_size,
                           n_threads=n_threads, clip_reward=True,
-                          extra_functionality=[agent.anneal_policy_clip])
+                          extra_functionality=[agent.anneal_policy_clip],
+                          load_checkpoint=False, evaluate=False)
 
     scores, steps_array = ep_loop.run(n_games)
 

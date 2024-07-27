@@ -22,8 +22,6 @@ def main():
 
     env = make_vec_envs(env_name, n_threads=n_threads, seed=0)
 
-    print(env.observation_space.shape)
-
     fields = ['states', 'actions', 'rewards', 'states_',
               'mask', 'log_probs']
     state_shape = (T, n_threads, *env.observation_space.shape)
@@ -62,7 +60,7 @@ def main():
     ep_loop = EpisodeLoop(agent, env, memory, n_epochs, T, batch_size,
                           n_threads=n_threads, clip_reward=True,
                           extra_functionality=[agent.anneal_policy_clip],
-                          adapt_actions=True)
+                          adapt_actions=True, load_checkpoint=False, evaluate=False)
 
     scores, steps_array = ep_loop.run(n_games)
 

@@ -42,6 +42,34 @@ class TD3Learner(Learner):
         self.update_network_parameters(self.critic_2,
                                        self.target_critic_2, tau=1.0)
 
+    def save_models(self, fname=None):
+        fname = fname or 'models/td3_learner'
+        checkpoint = {
+            'actor_model_state_dict': self.actor.state_dict(),
+            'critic_1_model_state_dict': self.critic_1.state_dict(),
+            'critic_2_model_state_dict': self.critic_2.state_dict(),
+            'actor_optimizer_state_dict': self.actor_optimizer.state_dict(),
+            'critic_1_optimizer_state_dict': self.critic_1_optimizer.state_dict(),
+            'critic_2_optimizer_state_dict': self.critic_2_optimizer.state_dict(),
+        }
+        T.save(checkpoint, fname)
+
+    def load_models(self, fname=None):
+        fname = fname or 'models/td3_learner'
+        checkpoint = T.load(fname)
+        self.actor.load_state_dict(checkpoint['actor_model_state_dict'])
+        self.critic_1.load_state_dict(checkpoint['critic_1_model_state_dict'])
+        self.critic_2.load_state_dict(checkpoint['critic_2_model_state_dict'])
+        self.actor_optimizer.load_state_dict(checkpoint['actor_optimizer_state_dict'])
+        self.critic_1_optimizer.load_state_dict(checkpoint['critic_1_optimizer_state_dict'])
+        self.critic_2_optimizer.load_state_dict(checkpoint['critic_2_optimizer_state_dict'])
+
+        self.update_network_parameters(self.actor, self.target_actor, tau=1.0)
+        self.update_network_parameters(self.critic_1,
+                                       self.target_critic_1, tau=1.0)
+        self.update_network_parameters(self.critic_2,
+                                       self.target_critic_2, tau=1.0)
+
     def update(self, transitions):
         states, actions, rewards, states_, dones = transitions
 

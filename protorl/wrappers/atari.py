@@ -1,7 +1,7 @@
 import collections
 import cv2
 import numpy as np
-import gym
+import gymnasium as gym
 
 
 class RepeatActionAndMaxFrame(gym.Wrapper):
@@ -40,7 +40,7 @@ class RepeatActionAndMaxFrame(gym.Wrapper):
                 self.env.reset()
         if self.fire_first:
             assert self.env.unwrapped.get_action_meanings()[1] == 'FIRE'
-            obs, _, _, _ = self.env.step(1)
+            obs, _, _, _, _ = self.env.step(1)
 
         self.frame_buffer = np.zeros(shape=(2, *self.shape), dtype=np.float16)
         self.frame_buffer[0] = obs
@@ -88,16 +88,3 @@ class StackFrames(gym.ObservationWrapper):
         self.stack.append(observation)
 
         return np.array(self.stack).reshape(self.observation_space.low.shape)
-
-
-"""
-def make_env(env_name, shape=(84, 84, 1), repeat=4, clip_rewards=False,
-             no_ops=0, fire_first=False, n_threads=1):
-    env = gym.make(env_name)
-    env = RepeatActionAndMaxFrame(env, repeat, clip_rewards,
-                                  no_ops, fire_first)
-    env = PreprocessFrame(shape, env)
-    env = StackFrames(env, repeat)
-
-    return env
-"""
