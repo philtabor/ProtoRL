@@ -9,7 +9,7 @@ setup(
     license="MIT",
     packages=find_packages(),
     install_requires=[
-        "numpy==1.23",
+        "numpy>=1.23, <2.0",
         "torch>=1.11",
         "gymnasium",
         "gymnasium[accept-rom-license]",
