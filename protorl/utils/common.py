@@ -33,7 +33,7 @@ def calculate_conv_output_dims(channels=(32, 64, 64),
 def convert_arrays_to_tensors(array, device):
     tensors = []
     for arr in array:
-        tensors.append(T.tensor(arr).to(device))
+        tensors.append(T.tensor(np.array(arr)).to(device))
     return tensors
 
 
@@ -76,7 +76,7 @@ def calc_adv_and_returns(values, values_, rewards, dones,
         adv.append(advantage)
     adv.reverse()
     adv = adv[:-1]
-    adv = T.tensor(adv, dtype=T.double,
+    adv = T.tensor(np.array(adv), dtype=T.double,
                    device=device, requires_grad=False).unsqueeze(2)
     returns = adv + values.unsqueeze(2)
     adv = (adv - adv.mean()) / (adv.std() + 1e-4)
