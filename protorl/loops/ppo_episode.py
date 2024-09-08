@@ -72,7 +72,7 @@ class EpisodeLoop:
 
             avg_score = np.mean(scores[-100:])
             if i % self.print_every == 0:
-                print(f'episode {i+1} average score {avg_score:.1f} n steps {n_steps}')
+                print(f'episode {i} average score {avg_score:.1f} n steps {n_steps}')
             if avg_score > best_score:
                 if not self.evaluate:
                     self.agent.save_models()
