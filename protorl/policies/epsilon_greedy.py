@@ -8,8 +8,9 @@ class EpsilonGreedyPolicy:
         self.epsilon = eps_start
         self.eps_dec = eps_dec
         self.eps_min = eps_min
-        self.action_space = [[i for i in range(n_actions)]
-                             for x in range(n_threads)]
+        # self.action_space = [[i for i in range(n_actions)]
+        #                     for x in range(n_threads)]
+        self.action_space = [i for i in range(n_actions)]
 
     def decrement_epsilon(self):
         self.epsilon = self.epsilon - self.eps_dec \
@@ -19,7 +20,8 @@ class EpsilonGreedyPolicy:
         if np.random.random() > self.epsilon:
             action = T.argmax(q_values, dim=-1).cpu().detach().numpy()
         else:
-            action = np.array([np.random.choice(a) for a in self.action_space])
+            # action = np.array([np.random.choice(a) for a in self.action_space])
+            action = np.random.choice(self.action_space)
 
         self.decrement_epsilon()
         return action
