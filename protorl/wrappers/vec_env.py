@@ -1,3 +1,4 @@
+import importlib
 from mpi4py import MPI
 import multiprocessing as mp
 import gymnasium as gym
@@ -115,9 +116,17 @@ class CloudpickleWrapper:
 
 
 def make_single_env(env_id, use_atari, repeat=4,
-                    no_ops=0, **kwargs):
+                    no_ops=0, package_to_import=None, **kwargs):
     def _thunk():
-        env = gym.make(env_id, **kwargs)
+        try:
+            env = gym.make(env_id, **kwargs)
+        except (gym.error.Error, ImportError) as e:
+            if package_to_import:
+                try:
+                    importlib.import_module(package_to_import)
+                    env = gym.make(env_id, **kwargs)
+                except ImportError:
+                    raise ImportError(f"Could not import {package_to_import}. Please ensure it's installed.")
         if use_atari:
             env = gym.wrappers.AtariPreprocessing(env, noop_max=no_ops, scale_obs=True)
             env = FrameStack(env, num_stack=repeat)
@@ -125,11 +134,13 @@ def make_single_env(env_id, use_atari, repeat=4,
     return _thunk
 
 
-def make_vec_envs(env_name, use_atari=False, seed=None, n_threads=2, **kwargs):
+def make_vec_envs(env_name, use_atari=False, seed=None, n_threads=2,
+                  package_to_import=None, **kwargs):
     mpi_rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
     seed = seed + 10000 * mpi_rank if seed is not None else None
     set_global_seeds(seed)
-    envs = [make_single_env(env_name, use_atari, **kwargs)
+    envs = [make_single_env(env_name, use_atari,
+                            package_to_import=package_to_import, **kwargs)
             for _ in range(n_threads)]
 
     envs = SubprocVecEnv(envs, seed)
