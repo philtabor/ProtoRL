@@ -4,7 +4,7 @@ from protorl.utils.common import action_adapter, clip_reward
 
 class EpisodeLoop:
     def __init__(self, agent, env, memory, n_epochs, T, n_batches,
-                 n_threads=1, adapt_actions=False,
+                 n_threads=1, print_every=1, adapt_actions=False,
                  load_checkpoint=False, clip_reward=False,
                  evaluate=False, extra_functionality=None, seed=None):
         self.agent = agent
@@ -13,6 +13,7 @@ class EpisodeLoop:
         self.memory = memory
         self.n_epochs = n_epochs
         self.T = T
+        self.print_every = print_every
         self.n_batches = n_batches
         self.load_checkpoint = load_checkpoint
         self.evaluate = evaluate
@@ -70,8 +71,8 @@ class EpisodeLoop:
             steps.append(n_steps)
 
             avg_score = np.mean(scores[-100:])
-            print('episode {} average score {:.1f} n steps {}'.
-                  format(i+1, avg_score, n_steps))
+            if i % self.print_every == 0:
+                print(f'episode {i+1} average score {avg_score:.1f} n steps {n_steps}')
             if avg_score > best_score:
                 if not self.evaluate:
                     self.agent.save_models()

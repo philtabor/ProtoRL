@@ -42,8 +42,7 @@ class PPOLearner(Learner):
         self.critic_optimizer.load_state_dict(checkpoint['critic_optimizer_state_dict'])
 
     def update(self, transitions, batches):
-        s, a, r, s_, d, lp = transitions
-        # s, s_, r = convert_arrays_to_tensors([s, s_, r], device=self.device)
+        s, a, r, s_, d, _ = transitions
 
         with T.no_grad():
             values = self.critic(s).squeeze()
@@ -52,8 +51,7 @@ class PPOLearner(Learner):
         adv, returns = calc_adv_and_returns(values, values_, r, d)
 
         for batch in batches:
-            indices, states, actions, rewards, states_, dones, old_probs =\
-                batch
+            indices, states, actions, _, _, _, old_probs = batch
             if self.action_type == 'continuous':
                 alpha, beta = self.actor(states)
                 _, new_probs, entropy = self.policy(alpha, beta,
