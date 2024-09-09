@@ -55,6 +55,17 @@ python dqn.py
 This will train a deep Q agent on the CartPole environment. If you want to try
 out other environments, please feel free to edit the dqn.py file.
 
+## Support for Third Party Environments
+
+If you are trying to implement an RL agent for a custom environment, this can be accomplished by
+passing the package_to_import flag to the make_env or make_vec_envs functions. Package names
+should be a string, and it should be an installed package.
+
+If the environment you are trying to use doesn't adhere to the new Gymnasium specifications (i.e. it
+doesn't return observation, info from env.reset() or the step() function doesn't return both a terminal
+and truncated flag), then you will need to pass the apply_api_compatibility=True flag in the make_env
+or make_vec_envs functions.
+
 ## How ProtoRL Works
 
 Agents are comprised of a number of bolt-on modules that perform the basic functionality needed.
