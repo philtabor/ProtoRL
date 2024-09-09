@@ -82,7 +82,7 @@ class PPOLearner(Learner):
 
             self.actor_optimizer.zero_grad()
             actor_loss.mean().backward()
-            T.nn.utils.clip_grad_norm_(self.actor.parameters(), 40)
+            T.nn.utils.clip_grad_norm_(self.actor.parameters(), 0.5)
             self.actor_optimizer.step()
 
             critic_value = self.critic(states).squeeze()
