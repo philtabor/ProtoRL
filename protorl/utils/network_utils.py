@@ -10,8 +10,13 @@ from protorl.networks.head import ValueHead
 from protorl.utils.common import calculate_conv_output_dims
 
 
-def make_dqn_networks(env, hidden_layers=[512], use_double=False,
-                      use_atari=False, use_dueling=False, *args, **kwargs):
+def make_dqn_networks(env, hidden_layers=[512],
+                      use_atari=False, use_dueling=False,
+                      config=None, *args, **kwargs):
+    if config:
+        use_dueling = config.use_dueling
+        use_atari = config.use_atari
+
     head_fn = DuelingHead if use_dueling else QHead
     base_fn = AtariBase if use_atari else LinearBase
 
@@ -36,7 +41,12 @@ def make_dqn_networks(env, hidden_layers=[512], use_double=False,
 
 def make_ddpg_networks(env,
                        actor_hidden_dims=[256, 256],
-                       critic_hidden_dims=[256, 256]):
+                       critic_hidden_dims=[256, 256],
+                       config=None):
+    if config:
+        actor_hidden_dims = config.actor_dims
+        critic_hidden_dims = config.critic_dims
+
     actor_base = LinearBase(input_dims=env.observation_space.shape,
                             hidden_dims=actor_hidden_dims)
 
@@ -172,3 +182,52 @@ def make_ppo_networks(env, action_space, actor_hidden_dims=[128, 128],
                     m.bias.data.uniform_(-stdv, stdv)
 
     return actor, critic
+
+def make_apex_ddpg_networks(env,
+                            actor_hidden_dims=[256, 256],
+                            critic_hidden_dims=[256, 256],
+                            config=None, *args, **kwargs):
+    if config:
+        actor_hidden_dims = config.actor_dims
+        critic_hidden_dims = config.critic_dims
+
+    actor_base = LinearTanhBase(input_dims=env.observation_space.shape,
+                                hidden_dims=actor_hidden_dims,
+                                *args, **kwargs)
+
+    actor_head = DeterministicHead(n_actions=env.action_space.shape[0],
+                                   input_dims=[actor_hidden_dims[-1]],
+                                   *args, **kwargs)
+
+    actor = Sequential(actor_base, actor_head)
+
+    target_actor_base = LinearTanhBase(input_dims=env.observation_space.shape,
+                                       hidden_dims=actor_hidden_dims,
+                                       *args, **kwargs)
+
+    target_actor_head = DeterministicHead(n_actions=env.action_space.shape[0],
+                                          input_dims=[actor_hidden_dims[-1]],
+                                          *args, **kwargs)
+
+    target_actor = Sequential(target_actor_base, target_actor_head)
+
+    input_dims = [env.observation_space.shape[0] + env.action_space.shape[0]]
+    critic_base = CriticBase(input_dims=input_dims,
+                             hidden_dims=critic_hidden_dims,
+                             *args, **kwargs)
+
+    critic_head = ValueHead(input_dims=[critic_hidden_dims[-1]],
+                            *args, **kwargs)
+
+    critic = Sequential(critic_base, critic_head)
+
+    target_critic_base = CriticBase(input_dims=input_dims,
+                                    hidden_dims=critic_hidden_dims,
+                                    *args, **kwargs)
+    target_critic_head = ValueHead(input_dims=[critic_hidden_dims[-1]],
+                                   *args, **kwargs)
+
+    target_critic = Sequential(target_critic_base, target_critic_head)
+
+    return actor, critic, target_actor, target_critic
+
