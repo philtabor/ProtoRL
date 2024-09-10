@@ -9,10 +9,11 @@ Out of the box, ProtoRL implements the following algorithms:
 - **DQN Double DQN, D3QN, PPO** for single agents with a discrete action space
 - **DDPG, TD3, SAC, PPO** for single agents with a continuous action space
 - **Prioritized Experience Replay** for any off policy RL algorithm
+- APE-X DDPG for distributed prioritized DDPG
+- APE-X DQN for distributed prioritized D3QN
 
 Note that this is a v0.3 release, and more agents are coming. I am working on developing
 open source versions of:
-- **Distributed Prioritized Experience Replay (APE-X)**
 - **Random Network Distillation (RND)**
 - **Recurrent Replay Distributed DQN (R2D2)**
 - **Never Give Up (NGU)**
