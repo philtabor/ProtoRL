@@ -3,7 +3,13 @@ import torch as T
 
 
 class NoisyDeterministicPolicy:
-    def __init__(self, n_actions, noise=0.1, min_action=-1, max_action=1):
+    def __init__(self, noise=0.1, min_action=-1, max_action=1,
+                 config=None):
+        if config:
+            noise = config.noise
+            min_action = config.min_action
+            max_action = config.max_action
+
         self.noise = noise
         self.min_action = min_action
         self.max_action = max_action

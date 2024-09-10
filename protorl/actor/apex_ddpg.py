@@ -1,7 +1,8 @@
-from protorl.actor.base import Actor
-from nstep import NStepBuffer
-from protorl.utils.common import convert_arrays_to_tensors
+
 import torch as T
+from protorl.actor.base import Actor
+from protorl.memory.nstep import NStepBuffer
+from protorl.utils.common import convert_arrays_to_tensors
 
 
 class ApexActor(Actor):
