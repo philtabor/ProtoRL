@@ -3,12 +3,12 @@ import torch as T
 import matplotlib.pyplot as plt
 
 
-def plot_learning_curve(x, scores, figure_file=None):
+def plot_learning_curve(x, scores, figure_file=None, window=100):
     running_avg = np.zeros(len(scores))
     for i in range(len(running_avg)):
-        running_avg[i] = np.mean(scores[max(0, i-100):(i+1)])
+        running_avg[i] = np.mean(scores[max(0, i-window):(i+1)])
     plt.plot(x, running_avg)
-    plt.title('Running average of previous 100 scores')
+    plt.title(f'Running average of previous {window} scores')
     plt.xlabel('Time Steps')
     plt.ylabel('Average Score')
     if figure_file:
