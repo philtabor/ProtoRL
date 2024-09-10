@@ -13,11 +13,11 @@ def main():
     env_name = 'CartPole-v1'
     n_games = 4000
     bs = 64
-    n_threads = 8
+    n_threads = 32
     n_epochs = 10
     horizon = 16384
     T = int(horizon // n_threads)
-    batch_size = int(T // bs)
+    n_batches = int(horizon // bs)
 
     env = make_vec_envs(env_name, n_threads=n_threads, seed=0)
 
@@ -49,11 +49,11 @@ def main():
     actor = Actor(actor_net, critic_net, 'discrete', policy)
 
     actor_net, critic_net = make_ppo_networks(env, action_space='discrete')
-    learner = Learner(actor_net, critic_net, 'discrete', policy)
+    learner = Learner(actor_net, critic_net, 'discrete', policy, entropy_coeff=0.01)
 
     agent = Agent(actor, learner)
 
-    ep_loop = EpisodeLoop(agent, env, memory, n_epochs, T, batch_size,
+    ep_loop = EpisodeLoop(agent, env, memory, n_epochs, T, n_batches,
                           n_threads=n_threads, clip_reward=True,
                           extra_functionality=[agent.anneal_policy_clip],
                           load_checkpoint=False, evaluate=False)
