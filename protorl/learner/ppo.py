@@ -1,6 +1,5 @@
 import torch as T
 from protorl.learner.base import Learner
-from protorl.utils.common import convert_arrays_to_tensors
 from protorl.utils.common import calc_adv_and_returns
 
 
@@ -18,7 +17,6 @@ class PPOLearner(Learner):
         self.policy = policy
         self.actor = actor_net
         self.critic = critic_net
-        self.networks = [net for net in [self.actor, self.critic]]
 
         self.actor_optimizer = T.optim.Adam(self.actor.parameters(), lr=lr)
         self.critic_optimizer = T.optim.Adam(self.critic.parameters(), lr=lr)
