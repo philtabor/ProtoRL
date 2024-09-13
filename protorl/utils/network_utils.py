@@ -149,7 +149,7 @@ def make_sac_networks(env):
 
 def make_ppo_networks(env, action_space, actor_hidden_dims=[128, 128],
                       critic_hidden_dims=[128, 128],
-                      uniform_initialize=True):
+                      uniform_init=False, orthogonal_init=False):
     actor_base = LinearTanhBase(input_dims=env.observation_space.shape,
                                 hidden_dims=actor_hidden_dims)
     critic_base = LinearTanhBase(hidden_dims=critic_hidden_dims,
@@ -166,7 +166,7 @@ def make_ppo_networks(env, action_space, actor_hidden_dims=[128, 128],
     actor = Sequential(actor_base, actor_head)
     critic = Sequential(critic_base, critic_head)
 
-    if uniform_initialize:
+    if uniform_init:
         for m in actor.modules():
             if isinstance(m, nn.Linear):
                 stdv = 1. / math.sqrt(m.weight.size(1))
@@ -180,6 +180,19 @@ def make_ppo_networks(env, action_space, actor_hidden_dims=[128, 128],
                 nn.init.uniform_(m.weight, -stdv, stdv)
                 if m.bias is not None:
                     m.bias.data.uniform_(-stdv, stdv)
+
+    if orthogonal_init:
+        for m in actor.modules():
+            if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
+                nn.init.orthogonal_(m.weight)
+                if m.bias is not None:
+                    m.bias.data.fill_(0.0)
+
+        for m in critic.modules():
+            if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
+                nn.init.orthogonal_(m.weight)
+                if m.bias is not None:
+                    m.bias.data.fill_(0.0)
 
     return actor, critic
 
