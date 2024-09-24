@@ -43,11 +43,6 @@ class AtariBase(NetworkCore, nn.Module):
         assert len(kernels) == 3, "Must supply 3 kernels for AtariBase"
         assert len(strides) == 3, "Must supply 3 strides for AtariBase"
 
-        self.input_dims = input_dims
-        self.channels = channels
-        self.kernels = kernels
-        self.strides = strides
-
         self.conv1 = nn.Conv2d(input_dims[0], channels[0],
                                kernels[0], strides[0])
         self.conv2 = nn.Conv2d(channels[0], channels[1],
