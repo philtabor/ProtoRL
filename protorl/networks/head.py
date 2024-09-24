@@ -107,6 +107,7 @@ class BetaHead(NetworkCore, nn.Module):
         beta = F.relu(self.beta(state)) + 1.0
         return alpha, beta
 
+
 class DualValueHead(NetworkCore, nn.Module):
     def __init__(self, input_dims, *args, **kwargs):
         super().__init__(*args, **kwargs)
