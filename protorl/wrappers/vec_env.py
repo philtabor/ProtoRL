@@ -1,5 +1,5 @@
 import importlib
-from mpi4py import MPI
+# from mpi4py import MPI
 import multiprocessing as mp
 import gymnasium as gym
 from gymnasium.wrappers import FrameStack
@@ -136,8 +136,9 @@ def make_single_env(env_id, use_atari, repeat=4,
 
 def make_vec_envs(env_name, use_atari=False, seed=None, n_threads=2,
                   package_to_import=None, **kwargs):
-    mpi_rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
-    seed = seed + 10000 * mpi_rank if seed is not None else None
+    # mpi_rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
+    # seed = seed + 10000 * mpi_rank if seed is not None else None
+    seed = seed or 1
     set_global_seeds(seed)
     envs = [make_single_env(env_name, use_atari,
                             package_to_import=package_to_import, **kwargs)
