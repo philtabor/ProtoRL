@@ -10,17 +10,15 @@ setup(
     packages=find_packages(),
     install_requires=[
         "numpy>=1.23, <2.0",
-        "torch>=1.11",
+        "torch==2.2",
         "gymnasium",
         "gymnasium[accept-rom-license]",
         "gymnasium[mujoco]",
         "gymnasium[box2d]",
         "gymnasium[atari]",
-        "mpi4py",
         "opencv-python",
         "matplotlib",
-        "ale-py"
     ],
     description="Torch based deep RL framework for rapid prototyping",
-    python_requires=">=3.8",
+    python_requires=">=3.8, <3.12",
 )
