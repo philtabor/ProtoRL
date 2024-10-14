@@ -24,7 +24,7 @@ class EpisodeLoop:
         if self.load_checkpoint:
             self.agent.load_models()
         n_steps = 0
-        best_score = self.env.reward_range[0]
+        best_score = -np.inf
         scores, steps = [], []
         for i in range(n_episodes):
             done, trunc = False, False

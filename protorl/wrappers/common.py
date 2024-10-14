@@ -1,6 +1,7 @@
 import importlib
 import gymnasium as gym
-from gymnasium.wrappers import FrameStack
+import ale_py
+from gymnasium.wrappers import FrameStackObservation
 from protorl.wrappers.single_threaded import BatchDimensionWrapper
 
 
@@ -21,7 +22,7 @@ def make_env(env_name, use_atari=False, repeat=4,
 
     if use_atari:
         env = gym.wrappers.AtariPreprocessing(env, noop_max=no_ops, scale_obs=True)
-        env = FrameStack(env, num_stack=repeat)
+        env = FrameStackObservation(env, stack_size=repeat)
         env = BatchDimensionWrapper(env)
 
     return env

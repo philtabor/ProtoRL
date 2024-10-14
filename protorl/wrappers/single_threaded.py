@@ -18,6 +18,4 @@ class SingleThreadedWrapper(gym.Wrapper):
 
 class BatchDimensionWrapper(gym.ObservationWrapper):
     def observation(self, observation):
-        # observation = observation[np.newaxis, :]
-
         return np.array([observation])
