@@ -28,7 +28,7 @@ class EpisodeLoop:
         if self.load_checkpoint:
             self.agent.load_models()
         n_steps = 0
-        best_score = self.env.reward_range[0]
+        best_score = -np.inf
         scores, steps = [], []
         if self.adapt_actions:
             max_a = self.env.action_space.high[0]
