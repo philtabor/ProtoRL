@@ -2,7 +2,7 @@ import importlib
 # from mpi4py import MPI
 import multiprocessing as mp
 import gymnasium as gym
-from gymnasium.wrappers import FrameStack
+from gymnasium.wrappers import FrameStackObservation
 import numpy as np
 import torch as T
 
@@ -24,8 +24,7 @@ def worker(remote, parent_remote, env_fn_wrapper):
             remote.close()
             break
         elif cmd == 'get_spaces':
-            remote.send((env.observation_space, env.action_space,
-                        env.reward_range))
+            remote.send((env.observation_space, env.action_space))
         else:
             raise NotImplementedError
 
@@ -50,10 +49,9 @@ class SubprocVecEnv:
             remote.close()
 
         self.remotes[0].send(('get_spaces', None))
-        observation_space, action_space, reward_range = self.remotes[0].recv()
+        observation_space, action_space = self.remotes[0].recv()
         self.observation_space = observation_space
         self.action_space = action_space
-        self.reward_range = reward_range
 
     def step_async(self, actions):
         assert not self.closed, "trying to operate after calling close()"
@@ -129,7 +127,7 @@ def make_single_env(env_id, use_atari, repeat=4,
                     raise ImportError(f"Could not import {package_to_import}. Please ensure it's installed.")
         if use_atari:
             env = gym.wrappers.AtariPreprocessing(env, noop_max=no_ops, scale_obs=True)
-            env = FrameStack(env, num_stack=repeat)
+            env = FrameStackObservation(env, stack_size=repeat)
         return env
     return _thunk
 
