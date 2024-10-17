@@ -149,16 +149,21 @@ def make_sac_networks(env):
 
 def make_ppo_networks(env, action_space, actor_hidden_dims=[128, 128],
                       critic_hidden_dims=[128, 128],
+                      use_atari=False,
                       uniform_init=False, orthogonal_init=False):
-    actor_base = LinearTanhBase(input_dims=env.observation_space.shape,
-                                hidden_dims=actor_hidden_dims)
-    critic_base = LinearTanhBase(hidden_dims=critic_hidden_dims,
-                                 input_dims=env.observation_space.shape)
-    critic_head = ValueHead(input_dims=[critic_hidden_dims[-1]])
+    base_fn = AtariBase if use_atari else LinearTanhBase
+    actor_base = base_fn(input_dims=env.observation_space.shape,
+                         hidden_dims=actor_hidden_dims)
+    critic_base = base_fn(hidden_dims=critic_hidden_dims,
+                         input_dims=env.observation_space.shape)
+    actor_input_dims = calculate_conv_output_dims() if use_atari else [actor_hidden_dims[-1]]
+    critic_input_dims = calculate_conv_output_dims() if use_atari else [critic_hidden_dims[-1]]
+
+    critic_head = ValueHead(input_dims=critic_input_dims)
 
     if action_space == 'discrete':
         actor_head = SoftmaxHead(n_actions=env.action_space.n,
-                                 input_dims=[actor_hidden_dims[-1]])
+                                 input_dims=actor_input_dims)
     elif action_space == 'continuous':
         actor_head = BetaHead(input_dims=[actor_hidden_dims[-1]],
                               n_actions=env.action_space.shape[0])

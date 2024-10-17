@@ -1,10 +1,11 @@
 import importlib
-# from mpi4py import MPI
+import ale_py
 import multiprocessing as mp
 import gymnasium as gym
 from gymnasium.wrappers import FrameStackObservation
 import numpy as np
 import torch as T
+from protorl.wrappers.single_threaded import BatchDimensionWrapper
 
 
 def worker(remote, parent_remote, env_fn_wrapper):
@@ -125,9 +126,14 @@ def make_single_env(env_id, use_atari, repeat=4,
                     env = gym.make(env_id, **kwargs)
                 except ImportError:
                     raise ImportError(f"Could not import {package_to_import}. Please ensure it's installed.")
+            else:
+                print(f"Error {e} encountered.")
+
         if use_atari:
             env = gym.wrappers.AtariPreprocessing(env, noop_max=no_ops, scale_obs=True)
             env = FrameStackObservation(env, stack_size=repeat)
+            # env = BatchDimensionWrapper(env)
+
         return env
     return _thunk
 
