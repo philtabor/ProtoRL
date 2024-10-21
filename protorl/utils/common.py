@@ -23,9 +23,9 @@ def calculate_conv_output_dims(channels=(32, 64, 64),
     # assume input_dims is [channels, height, width]
     # assume channels is (x, y, z)
     # assume kernels is (a, b, c)
-    _, h, w = input_dims
-    ch1, ch2, ch3 = channels
-    k1, k2, k3 = kernels
+    _, _, w = input_dims
+    _, _, ch3 = channels
+    _, k2, k3 = kernels
     output_dims = ch3 * w // (k2 * k3) * w // (k2 * k3)
     return [output_dims]
 
@@ -64,7 +64,6 @@ def clip_reward(x):
 def calc_adv_and_returns(values, values_, rewards, dones,
                          gamma=0.99, gae_lambda=0.95):
     # TODO - multi gpu support
-    # TODO - support for different vector shapes
     device = 'cuda:0' if T.cuda.is_available() else 'cpu'
     deltas = rewards + gamma * values_ - values
     deltas = deltas.cpu().numpy()
@@ -76,8 +75,9 @@ def calc_adv_and_returns(values, values_, rewards, dones,
         adv.append(advantage)
     adv.reverse()
     adv = adv[:-1]
+    last_dim = len(deltas.shape)
     adv = T.tensor(np.array(adv), dtype=T.double,
-                   device=device, requires_grad=False).unsqueeze(2)
-    returns = adv + values.unsqueeze(2)
+                   device=device, requires_grad=False).unsqueeze(last_dim)
+    returns = adv + values.unsqueeze(last_dim)
     adv = (adv - adv.mean()) / (adv.std() + 1e-4)
     return adv, returns
