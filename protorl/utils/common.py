@@ -17,9 +17,9 @@ def plot_learning_curve(x, scores, figure_file=None, window=100):
         plt.show()
 
 
-def calculate_conv_output_dims(channels=(32, 64, 64),
-                               kernels=(8, 4, 3),
-                               input_dims=(4, 84, 84)):
+def calculate_conv_output_dims(input_dims=(4, 84, 84),
+                               channels=(32, 64, 64),
+                               kernels=(8, 4, 3)):
     # assume input_dims is [channels, height, width]
     # assume channels is (x, y, z)
     # assume kernels is (a, b, c)
