@@ -156,8 +156,10 @@ def make_ppo_networks(env, action_space, actor_hidden_dims=[128, 128],
                          hidden_dims=actor_hidden_dims)
     critic_base = base_fn(hidden_dims=critic_hidden_dims,
                          input_dims=env.observation_space.shape)
-    actor_input_dims = calculate_conv_output_dims() if use_atari else [actor_hidden_dims[-1]]
-    critic_input_dims = calculate_conv_output_dims() if use_atari else [critic_hidden_dims[-1]]
+
+    idims = env.observation_space.shape
+    actor_input_dims = calculate_conv_output_dims(idims) if use_atari else [actor_hidden_dims[-1]]
+    critic_input_dims = calculate_conv_output_dims(idims) if use_atari else [critic_hidden_dims[-1]]
 
     critic_head = ValueHead(input_dims=critic_input_dims)
 
@@ -248,4 +250,3 @@ def make_apex_ddpg_networks(env,
     target_critic = Sequential(target_critic_base, target_critic_head)
 
     return actor, critic, target_actor, target_critic
-
