@@ -95,6 +95,20 @@ class SoftmaxHead(NetworkCore, nn.Module):
         return probs
 
 
+class SoftmaxLinearHead(NetworkCore, nn.Module):
+    def __init__(self, n_actions, input_dims, hidden_dims=[512], *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.linear1 = nn.Linear(*input_dims, *hidden_dims)
+        self.probs = nn.Linear(*hidden_dims, n_actions)
+        self.to(self.device)
+
+    def forward(self, x):
+        x = F.relu(self.linear1(x))
+        probs = F.softmax(self.probs(x), dim=1)
+
+        return probs
+
+
 class BetaHead(NetworkCore, nn.Module):
     def __init__(self, n_actions, input_dims=[256], *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -113,9 +127,24 @@ class DualValueHead(NetworkCore, nn.Module):
         super().__init__(*args, **kwargs)
         self.value_1 = nn.Linear(*input_dims, 1)
         self.value_2 = nn.Linear(*input_dims, 1)
+        self.to(self.device)
 
     def forward(self, x):
         value_1 = self.value_1(x)
         value_2 = self.value_2(x)
 
         return value_1, value_2
+
+
+class LinearHead(NetworkCore, nn.Module):
+    def __init__(self, input_dims, hidden_dims=[256], output_dims=[1], *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.linear1 = nn.Linear(*input_dims, *hidden_dims)
+        self.linear2 = nn.Linear(*hidden_dims, *output_dims)
+        self.to(self.device)
+
+    def forward(self, state):
+        x = F.relu(self.linear1(state))
+        x = self.linear2(x)
+
+        return x
