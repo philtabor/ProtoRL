@@ -26,3 +26,17 @@ def make_env(env_name, use_atari=False, repeat=4,
         env = BatchDimensionWrapper(env)
 
     return env
+
+class PyTorchObsWrapper(gym.ObservationWrapper):
+    def __init__(self, env=None):
+        super().__init__(env)
+        obs_shape = self.observation_space.shape
+        self.observation_space = gym.spaces.Box(
+                self.observation_space.low[0, 0, 0],
+                self.observation_space.high[0, 0, 0],
+                [obs_shape[2], obs_shape[0], obs_shape[1]],
+                dtype=self.observation_space.dtype
+                )
+
+    def observation(self, observation):
+        return observation.transpose(2, 0, 1)
