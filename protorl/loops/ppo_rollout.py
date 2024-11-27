@@ -29,7 +29,7 @@ class EpisodeLoop:
         if self.load_checkpoint:
             self.agent.load_models()
         n_steps = 0
-        # best_score = -np.inf
+        best_score = -np.inf
         scores, steps = [], []
 
         if self.adapt_actions:
@@ -69,20 +69,17 @@ class EpisodeLoop:
                                    for _ in range(self.n_batches)]
                         self.agent.update(transitions, batches)
                     self.epoch_counter += self.n_epochs
-                    print(f"Epoch: {self.epoch_counter} avg rollout score: {np.mean(rew):.1f}"
+                    avg_score = np.mean(rew)
+                    print(f"Epoch: {self.epoch_counter} avg rollout score: {avg_score:.1f}"
                           f" n_steps {self.step_counter}")
                     rew = []
+                    scores.append(np.mean(score))
+                    steps.append(n_steps)
             observation = observation_
-            # scores.append(np.mean(score))
-            # steps.append(n_steps)
-
-            # avg_score = np.mean(scores[-100:])
-            # if i % self.print_every == 0:
-            #    print(f'episode {i} score {np.sum(score):.1f} average score {avg_score:.1f} n steps {n_steps}')
-            # if avg_score > best_score:
-            #    if not self.evaluate:
-            #        self.agent.save_models()
-            #    best_score = avg_score
+            if avg_score > best_score:
+                if not self.evaluate:
+                    self.agent.save_models()
+                best_score = avg_score
             # TODO - more general way of handling the parameters
             # self.handle_extra_functionality(i, n_episodes)
         self.env.close()
