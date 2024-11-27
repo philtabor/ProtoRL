@@ -9,13 +9,14 @@ from protorl.memory.generic import initialize_memory
 
 
 def main():
-    env_name = 'CartPole-v1'
-    # env_name = 'PongNoFrameskip-v4'
+    # env_name = 'CartPole-v1'
+    # env_name = 'PongNoFrameskip-v0'
+    env_name = 'SpaceInvadersNoFrameskip-v4'
     # env_name = 'LunarLander-v2'
     use_prioritization = True
     use_double = True
     use_dueling = False
-    use_atari = False
+    use_atari = True
     env = make_env(env_name, use_atari=use_atari)
     n_games = 1500
     bs = 64
