@@ -29,7 +29,7 @@ class EpisodeLoop:
         if self.load_checkpoint:
             self.agent.load_models()
         n_steps = 0
-        best_score = -np.inf
+        best_score, avg_score = -np.inf, -np.inf
         scores, steps = [], []
 
         if self.adapt_actions:
