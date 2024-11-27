@@ -19,15 +19,25 @@ def plot_learning_curve(x, scores, figure_file=None, window=100):
 
 def calculate_conv_output_dims(input_dims=(4, 84, 84),
                                channels=(32, 64, 64),
-                               kernels=(8, 4, 3)):
-    # assume input_dims is [channels, height, width]
-    # assume channels is (x, y, z)
-    # assume kernels is (a, b, c)
-    _, _, w = input_dims
-    _, _, ch3 = channels
-    _, k2, k3 = kernels
-    output_dims = ch3 * w // (k2 * k3) * w // (k2 * k3)
-    return [output_dims]
+                               kernels=(8, 4, 3),
+                               strides=(4, 2, 1)):
+    curr_channels, curr_height, curr_width = input_dims
+
+    layer_outputs = []
+
+    for layer_idx, (out_channels, kernel, stride) in enumerate(zip(channels, kernels, strides)):
+        new_height = ((curr_height - kernel) // stride) + 1
+        new_width = ((curr_width - kernel) // stride) + 1
+
+        layer_outputs.append({
+            'layer': f'conv{layer_idx + 1}',
+            'shape': (out_channels, new_height, new_width)
+        })
+        curr_channels = out_channels
+        curr_height = new_height
+        curr_width = new_width
+    final_output_size = curr_channels * curr_height * curr_width
+    return [final_output_size]
 
 
 def convert_arrays_to_tensors(array, device):
@@ -79,5 +89,5 @@ def calc_adv_and_returns(values, values_, rewards, dones,
     adv = T.tensor(np.array(adv), dtype=T.double,
                    device=device, requires_grad=False).unsqueeze(last_dim)
     returns = adv + values.unsqueeze(last_dim)
-    adv = (adv - adv.mean()) / (adv.std() + 1e-4)
+    adv = (adv - adv.mean()) / (adv.std() + 1e-8)
     return adv, returns
