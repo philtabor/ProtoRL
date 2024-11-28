@@ -1,11 +1,13 @@
 import importlib
-import ale_py
 import multiprocessing as mp
+import ale_py
 import gymnasium as gym
-from gymnasium.wrappers import FrameStackObservation
 import numpy as np
 import torch as T
-from protorl.wrappers.single_threaded import BatchDimensionWrapper
+from miniworld import wrappers
+from protorl.wrappers.common import PyTorchObsWrapper
+from protorl.wrappers.atari import PreprocessFrame, RepeatActionAndMaxFrame, StackFrames, EpisodicLifeEnv, NoopResetEnv, FireResetEnv
+from protorl.wrappers.monitor import Monitor
 
 
 def worker(remote, parent_remote, env_fn_wrapper):
@@ -16,7 +18,7 @@ def worker(remote, parent_remote, env_fn_wrapper):
         if cmd == 'step':
             ob, reward, done, trunc, info = env.step(data)
             if done:
-                ob, info = env.reset()
+                ob, _ = env.reset()
             remote.send((ob, reward, done, trunc, info))
         elif cmd == 'reset':
             ob, info = env.reset()
@@ -114,7 +116,7 @@ class CloudpickleWrapper:
 
 
 
-def make_single_env(env_id, use_atari, repeat=4,
+def make_single_env(env_id, use_atari=False, pixel_env=False, repeat=4,
                     no_ops=0, package_to_import=None, **kwargs):
     def _thunk():
         try:
@@ -129,12 +131,22 @@ def make_single_env(env_id, use_atari, repeat=4,
             else:
                 print(f"Error {e} encountered.")
 
+        # TODO - need a better way of applying wrappers
         if use_atari:
-            env = gym.wrappers.AtariPreprocessing(env, noop_max=no_ops, scale_obs=True)
-            env = FrameStackObservation(env, stack_size=repeat)
-            # env = BatchDimensionWrapper(env)
+            env = NoopResetEnv(env, 30)
+            env = RepeatActionAndMaxFrame(env)
+            env = EpisodicLifeEnv(env)
+            env = FireResetEnv(env)
+            env = PreprocessFrame(shape=(84, 84, 1), env=env)
+            env = StackFrames(repeat=4, env=env)
+            env = Monitor(env)
+
+        if pixel_env:
+            env = wrappers.GreyscaleWrapper(env)
+            env = PyTorchObsWrapper(env)
 
         return env
+
     return _thunk
 
 
@@ -147,7 +159,6 @@ def make_vec_envs(env_name, use_atari=False, seed=None, n_threads=2,
     envs = [make_single_env(env_name, use_atari,
                             package_to_import=package_to_import, **kwargs)
             for _ in range(n_threads)]
-
     envs = SubprocVecEnv(envs, seed)
 
     return envs
