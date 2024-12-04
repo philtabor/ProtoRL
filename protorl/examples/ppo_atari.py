@@ -19,7 +19,7 @@ def main():
     n_batches = int(horizon // bs)
 
     env = make_vec_envs(env_name, n_threads=n_threads, seed=0, use_atari=True,
-                        pixel_env=False, package_to_import='miniworld')
+                        pixel_env=False)
 
     fields = ['states', 'actions', 'rewards', 'states_',
               'mask', 'log_probs']
