@@ -144,6 +144,7 @@ def make_single_env(env_id, use_atari=False, pixel_env=False, repeat=4,
         if pixel_env:
             env = wrappers.GreyscaleWrapper(env)
             env = PyTorchObsWrapper(env)
+            env = Monitor(env)
 
         return env
 
