@@ -9,8 +9,7 @@ class Monitor(gym.Wrapper):
 
     def reset(self, **kwargs):
         self.rewards = []
-        obs, info = self.env.reset(**kwargs)
-        return obs, info
+        return self.env.reset(**kwargs)
 
     def step(self, action):
         obs, reward, terminated, truncated, info = self.env.step(action)
