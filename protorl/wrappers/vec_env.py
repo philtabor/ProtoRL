@@ -137,15 +137,16 @@ def make_single_env(env_id, use_atari=False, pixel_env=False, repeat=4,
             env = RepeatActionAndMaxFrame(env)
             env = EpisodicLifeEnv(env)
             env = FireResetEnv(env)
-            env = PreprocessFrame(shape=(84, 84, 1), env=env)
+            env = PreprocessFrame(shape=(84, 84, 1), env=env, scale_obs=True)
             env = StackFrames(repeat=4, env=env)
-            env = Monitor(env)
 
         if pixel_env:
             env = wrappers.GreyscaleWrapper(env)
+            # env = PreprocessFrame(shape=(60, 80, 1), env=env, scale_obs=False)
             env = PyTorchObsWrapper(env)
-            env = Monitor(env)
+            env = StackFrames(repeat=4, env=env)
 
+        env = Monitor(env)
         return env
 
     return _thunk
