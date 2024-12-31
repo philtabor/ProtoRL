@@ -14,6 +14,7 @@ class PPOAtariNetwork(NetworkCore, nn.Module):
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        conv_dims = calculate_conv_output_dims()
         self.cnn = nn.Sequential(
             nn.Conv2d(input_dims[0], channels[0], kernels[0], strides[0]),
             nn.ReLU(),
@@ -22,17 +23,12 @@ class PPOAtariNetwork(NetworkCore, nn.Module):
             nn.Conv2d(channels[1], channels[2], kernels[2], strides[2]),
             nn.ReLU(),
             nn.Flatten(),
+            nn.Linear(*conv_dims, 512),
+            nn.ReLU(),
         )
-
-        input_dims = calculate_conv_output_dims()
-
-        self.critic = nn.Sequential(nn.Linear(*input_dims, 512),
-                                    nn.ReLU(),
-                                    nn.Linear(512, 1)
+        self.critic = nn.Sequential(nn.Linear(512, 1)
         )
-        self.actor = nn.Sequential(nn.Linear(*input_dims, 512),
-                                   nn.ReLU(),
-                                   nn.Linear(512, n_actions),
+        self.actor = nn.Sequential(nn.Linear(512, n_actions),
                                    nn.Softmax(dim=1),
         )
 
