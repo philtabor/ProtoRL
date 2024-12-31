@@ -7,7 +7,8 @@ from protorl.utils.common import convert_arrays_to_tensors
 class GenericBuffer:
     def __init__(self, max_size, batch_size, fields,
                  prioritized=False, alpha=0.5, beta=0.5,
-                 device=None, warmup=0):
+                 device=None, warmup=0,
+                 n_threads=1):
         self.mem_size = max_size
         self.mem_cntr = 0
         self.batch_size = batch_size
@@ -15,6 +16,7 @@ class GenericBuffer:
         self.prioritized = prioritized
         self.device = device
         self.warmup = warmup
+        self.n_threads = n_threads
         if prioritized:
             self.sum_tree = SumTree(max_size, batch_size, alpha, beta)
 
@@ -38,10 +40,8 @@ class GenericBuffer:
                 arr.append(getattr(self, field)[batch])
 
         elif mode == 'batch':
-            batch = np.random.choice(max_mem, self.batch_size, replace=False)
+            batch = np.random.choice(self.mem_size * self.n_threads, self.batch_size, replace=False)
             arr = [batch]
-            for field in self.fields:
-                arr.append(getattr(self, field)[batch])
 
         elif mode == 'all':
             arr = [getattr(self, field)[:max_mem] for field in self.fields]
@@ -95,6 +95,6 @@ def initialize_memory(obs_shape, n_actions, max_size, batch_size,
     Memory = type('ReplayBuffer', (GenericBuffer,),
                   {field: value for field, value in zip(fields, vals)})
     memory_buffer = Memory(max_size, batch_size, fields,
-                           prioritized, alpha, beta, device, warmup)
+                           prioritized, alpha, beta, device, warmup, n_threads)
 
     return memory_buffer
