@@ -24,6 +24,12 @@ class PPOActor(Actor):
         self.actor.load_state_dict(checkpoint['actor_model_state_dict'])
         self.critic.load_state_dict(checkpoint['critic_model_state_dict'])
 
+    def evaluate_state(self, observation):
+        state = T.tensor(observation, dtype=T.float, device=self.device)
+        with T.no_grad():
+            value = self.critic(state)
+        return value.cpu().numpy()
+
     def choose_action(self, observation):
         state = T.tensor(observation, dtype=T.float, device=self.device)
         with T.no_grad():
