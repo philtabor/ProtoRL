@@ -41,7 +41,7 @@ class EpisodeLoop:
         else:
             observation, info = self.env.reset()
         rew = []
-        while n_steps < max_steps:
+        while self.step_counter < max_steps:
             action, log_prob = self.agent.choose_action(observation)
             if self.adapt_actions:
                 act = action_adapter(action, max_a).reshape(
@@ -56,32 +56,35 @@ class EpisodeLoop:
                 for d in info:
                     if 'ep_r' in d.keys():
                         score = d['ep_r']
-                rew.append(score)
+                        rew.append(score)
             mask = [0.0 if d or t else 1.0 for d, t in zip(done, trunc)]
             if not self.evaluate:
-                for o, a, r, o_, m, lp in zip(observation, action, r,
-                                              observation_, mask, log_prob):
-                    self.memory.store_transition([o, a, r, o_, m, lp])
+                v = self.agent.evaluate_state(observation).squeeze()
+                v_ = self.agent.evaluate_state(observation_).squeeze()
+                self.memory.store_transition([observation, action, r,
+                                              mask, log_prob, v, v_])
                 if n_steps % self.T == 0:
                     transitions = self.memory.sample_buffer(mode='all')
+                    adv, ret = None, None
                     for _ in range(self.n_epochs):
                         batches = [self.memory.sample_buffer(mode='batch')
                                    for _ in range(self.n_batches)]
-                        self.agent.update(transitions, batches)
+                        adv, ret = self.agent.update(transitions, batches, adv, ret)
                     self.epoch_counter += self.n_epochs
-                    avg_score = np.mean(rew)
+                    avg_score = np.mean(rew) if len(rew) > 0 else -np.inf
                     print(f"Epoch: {self.epoch_counter} avg rollout score: {avg_score:.1f}"
                           f" n_steps {self.step_counter}")
                     rew = []
-                    scores.append(np.mean(score))
-                    steps.append(n_steps)
+                    if avg_score is not -np.inf:
+                        scores.append(avg_score)
+                        steps.append(n_steps)
             observation = observation_
             if avg_score > best_score:
                 if not self.evaluate:
                     self.agent.save_models()
                 best_score = avg_score
             # TODO - more general way of handling the parameters
-            # self.handle_extra_functionality(i, n_episodes)
+            self.handle_extra_functionality(self.step_counter, max_steps)
         self.env.close()
         return scores, steps
 
