@@ -21,20 +21,19 @@ def main():
     env = make_vec_envs(env_name, n_threads=n_threads, seed=0, use_atari=True,
                         pixel_env=False)
 
-    fields = ['states', 'actions', 'rewards', 'states_',
-              'mask', 'log_probs']
-    state_shape = (T*n_threads, *env.observation_space.shape)
-    action_shape = probs_shape = T*n_threads
-    reward_shape = mask_shape = T*n_threads
-
+    fields = ['states', 'actions', 'rewards',
+              'mask', 'log_probs', 'values', 'values_']
+    state_shape = (T, n_threads, *env.observation_space.shape)
+    action_shape = probs_shape = values_shape = reward_shape = mask_shape = (T, n_threads)
     vals = [np.zeros(state_shape, dtype=np.float32),
             np.zeros(action_shape, dtype=np.float32),
             np.zeros(reward_shape, dtype=np.float32),
-            np.zeros(state_shape, dtype=np.float32),
             np.zeros(mask_shape, dtype=np.float32),
-            np.zeros(probs_shape, dtype=np.float32)]
+            np.zeros(probs_shape, dtype=np.float32),
+            np.zeros(values_shape, dtype=np.float32),
+            np.zeros(values_shape, dtype=np.float32)]
 
-    memory = initialize_memory(max_size= T*n_threads, #T,
+    memory = initialize_memory(max_size=T,
                                obs_shape=env.observation_space.shape,
                                batch_size=bs,
                                n_actions=env.action_space.n,
@@ -50,12 +49,12 @@ def main():
     actor = Actor(actor_critic, policy)
 
     actor_critic = PPOAtariNetwork(env.observation_space.shape, env.action_space.n)
-    learner = Learner(actor_critic, 'discrete', policy, lr=1e-4)
+    learner = Learner(actor_critic, 'discrete', policy, lr=3e-4)
 
     agent = Agent(actor, learner)
 
     ep_loop = EpisodeLoop(agent, env, memory, n_epochs, T, n_batches,
-                          n_threads=n_threads, clip_reward=False,
+                          n_threads=n_threads, clip_reward=True,
                           load_checkpoint=False, evaluate=False)
 
     scores, steps_array = ep_loop.run(max_steps=10_000_000)
