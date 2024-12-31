@@ -26,3 +26,9 @@ class PPOAtariActor(Actor):
             action, log_probs = self.policy(probs)
 
         return action.cpu().numpy(), log_probs.cpu().numpy()
+
+    def evaluate_state(self, observation):
+        state = T.tensor(observation, dtype=T.float, device=self.device)
+        with T.no_grad():
+            _, value = self.actor_critic(state)
+        return value.cpu().numpy()

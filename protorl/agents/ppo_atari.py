@@ -10,6 +10,11 @@ class PPOAtariAgent(Agent):
 
         return action, log_probs
 
+    def evaluate_state(self, observation):
+        value = self.actor.evaluate_state(observation)
+
+        return value
+
     def update_networks(self):
         src = self.learner.actor_critic
         dest = self.actor.actor_critic
@@ -18,6 +23,7 @@ class PPOAtariAgent(Agent):
     def anneal_policy_clip(self, n_ep, max_ep):
         self.learner.anneal_policy_clip(n_ep, max_ep)
 
-    def update(self, transitions, batches):
-        self.learner.update(transitions, batches)
+    def update(self, transitions, batches, adv, ret):
+        adv, ret = self.learner.update(transitions, batches, adv, ret)
         self.update_networks()
+        return adv, ret
