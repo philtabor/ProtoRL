@@ -103,13 +103,13 @@ class FireResetEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
 
     def reset(self, **kwargs):
         self.env.reset(**kwargs)
-        obs, _, terminated, truncated, info = self.env.step(1)
+        obs, _, terminated, truncated, _ = self.env.step(1)
         if terminated or truncated:
             self.env.reset(**kwargs)
-        obs, _, terminated, truncated, info = self.env.step(2)
+        obs, _, terminated, truncated, _ = self.env.step(2)
         if terminated or truncated:
             self.env.reset(**kwargs)
-        return obs, info
+        return obs, {}
 
 
 class RepeatActionAndMaxFrame(gym.Wrapper):
@@ -141,10 +141,12 @@ class RepeatActionAndMaxFrame(gym.Wrapper):
 
 
 class PreprocessFrame(gym.ObservationWrapper):
-    def __init__(self, shape, env=None):
+    def __init__(self, shape, env=None, scale_obs=True):
         super(PreprocessFrame, self).__init__(env)
         self.shape = (shape[2], shape[0], shape[1])
-        self.observation_space = gym.spaces.Box(low=0.0, high=1.0,
+        self.scale_obs = scale_obs
+        high = 1.0 if scale_obs else 255.0
+        self.observation_space = gym.spaces.Box(low=0.0, high=high,
                                                 shape=self.shape,
                                                 dtype=np.float16)
 
@@ -153,7 +155,8 @@ class PreprocessFrame(gym.ObservationWrapper):
         resized_screen = cv2.resize(new_frame, self.shape[1:],
                                     interpolation=cv2.INTER_AREA)
         new_obs = np.array(resized_screen, dtype=np.uint8).reshape(self.shape)
-        new_obs = new_obs / 255.0
+        if self.scale_obs:
+            new_obs = new_obs / 255.0
 
         return new_obs.astype(np.float16)
 
