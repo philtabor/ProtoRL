@@ -43,7 +43,7 @@ def calculate_conv_output_dims(input_dims=(4, 84, 84),
 def convert_arrays_to_tensors(array, device):
     tensors = []
     for arr in array:
-        tensors.append(T.tensor(np.array(arr)).to(device))
+        tensors.append(T.tensor(np.array(arr), dtype=T.float).to(device))
     return tensors
 
 
@@ -86,8 +86,14 @@ def calc_adv_and_returns(values, values_, rewards, dones,
     adv.reverse()
     adv = adv[:-1]
     last_dim = len(deltas.shape)
-    adv = T.tensor(np.array(adv), dtype=T.double,
+    adv = T.tensor(np.array(adv), dtype=T.float,
                    device=device, requires_grad=False).unsqueeze(last_dim)
     returns = adv + values.unsqueeze(last_dim)
-    adv = (adv - adv.mean()) / (adv.std() + 1e-8)
+
     return adv, returns
+
+def swap_and_flatten(arr):
+    shape = arr.shape
+    if len(shape) < 3:
+        shape = (*shape, 1)
+    return arr.swapaxes(0, 1).reshape(shape[0] * shape[1], *shape[2:])
