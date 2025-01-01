@@ -55,15 +55,19 @@ class EpisodeLoop:
                 r = clip_reward(reward) if self.clip_reward else reward
                 mask = [0.0 if d or t else 1.0 for d, t in zip(done, trunc)]
                 if not self.evaluate:
-                    self.memory.store_transition([observation, action,
-                                                  r, observation_, mask,
-                                                  log_prob])
+                    v = self.agent.evaluate_state(observation).squeeze()
+                    v_ = self.agent.evaluate_state(observation_).squeeze()
+                    self.memory.store_transition([observation, action, r,
+                                                  mask, log_prob, v, v_])
+
                     if self.step_counter % self.T == 0:
                         transitions = self.memory.sample_buffer(mode='all')
+                        adv, ret = None, None
                         for _ in range(self.n_epochs):
                             batches = [self.memory.sample_buffer(mode='batch')
                                        for _ in range(self.n_batches)]
-                            self.agent.update(transitions, batches)
+                            adv, ret = self.agent.update(transitions, batches, adv, ret)
+
                         self.step_counter = 0
                 observation = observation_
                 n_steps += 1
