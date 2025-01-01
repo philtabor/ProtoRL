@@ -4,7 +4,7 @@ import ale_py
 import gymnasium as gym
 import numpy as np
 import torch as T
-from miniworld import wrappers
+# from miniworld import wrappers
 from protorl.wrappers.common import PyTorchObsWrapper
 from protorl.wrappers.atari import PreprocessFrame, RepeatActionAndMaxFrame, StackFrames, EpisodicLifeEnv, NoopResetEnv, FireResetEnv
 from protorl.wrappers.monitor import Monitor
@@ -141,8 +141,8 @@ def make_single_env(env_id, use_atari=False, pixel_env=False, repeat=4,
             env = StackFrames(repeat=4, env=env)
 
         if pixel_env:
-            env = wrappers.GreyscaleWrapper(env)
-            # env = PreprocessFrame(shape=(60, 80, 1), env=env, scale_obs=False)
+            # env = wrappers.GreyscaleWrapper(env)
+            env = PreprocessFrame(shape=(60, 80, 1), env=env, scale_obs=False)
             env = PyTorchObsWrapper(env)
             env = StackFrames(repeat=4, env=env)
 
