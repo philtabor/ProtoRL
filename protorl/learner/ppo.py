@@ -80,9 +80,7 @@ class PPOLearner(Learner):
             weighted_clipped_probs = T.clamp(
                     prob_ratio, 1-self.policy_clip, 1+self.policy_clip) * adv
 
-            actor_loss = -T.min(weighted_probs,
-                                weighted_clipped_probs)
-
+            actor_loss = -T.min(weighted_probs, weighted_clipped_probs)
             actor_loss -= self.entropy_coefficient * entropy
             self.actor_optimizer.zero_grad()
             actor_loss.mean().backward()
