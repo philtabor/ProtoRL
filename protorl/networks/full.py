@@ -13,8 +13,7 @@ class PPOAtariNetwork(NetworkCore, nn.Module):
                  strides=(4, 2, 1),
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        conv_dims = calculate_conv_output_dims()
+        conv_dims = calculate_conv_output_dims(input_dims, channels, kernels, strides)
         self.cnn = nn.Sequential(
             nn.Conv2d(input_dims[0], channels[0], kernels[0], strides[0]),
             nn.ReLU(),
