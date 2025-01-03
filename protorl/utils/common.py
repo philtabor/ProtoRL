@@ -43,7 +43,7 @@ def calculate_conv_output_dims(input_dims=(4, 84, 84),
 def convert_arrays_to_tensors(array, device):
     tensors = []
     for arr in array:
-        tensors.append(T.tensor(np.array(arr), dtype=T.float).to(device))
+        tensors.append(T.tensor(np.array(arr), device=device))
     return tensors
 
 
