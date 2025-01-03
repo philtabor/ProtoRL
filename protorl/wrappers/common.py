@@ -1,13 +1,14 @@
 import importlib
 import gymnasium as gym
-import ale_py
-from gymnasium.wrappers import FrameStackObservation
+# from gymnasium.wrappers import FrameStackObservation
 from protorl.wrappers.single_threaded import BatchDimensionWrapper
-
+from protorl.wrappers.atari import PreprocessFrame, RepeatActionAndMaxFrame, StackFrames, EpisodicLifeEnv, NoopResetEnv, FireResetEnv
 
 def make_env(env_name, use_atari=False, repeat=4,
              no_ops=0, package_to_import=None, **kwargs):
     try:
+        if use_atari:
+            import ale_py
         env = gym.make(env_name, **kwargs)
     except (gym.error.Error, ImportError) as e:
         if package_to_import:
@@ -21,8 +22,14 @@ def make_env(env_name, use_atari=False, repeat=4,
             exit()
 
     if use_atari:
-        env = gym.wrappers.AtariPreprocessing(env, noop_max=no_ops, scale_obs=True)
-        env = FrameStackObservation(env, stack_size=repeat)
+        env = NoopResetEnv(env, 30)
+        env = RepeatActionAndMaxFrame(env)
+        env = EpisodicLifeEnv(env)
+        env = FireResetEnv(env)
+        env = PreprocessFrame(shape=(84, 84, 1), env=env, scale_obs=True)
+        env = StackFrames(repeat=4, env=env) 
+        # env = gym.wrappers.AtariPreprocessing(env, noop_max=no_ops, scale_obs=True)
+        # env = FrameStackObservation(env, stack_size=repeat)
         env = BatchDimensionWrapper(env)
 
     return env
