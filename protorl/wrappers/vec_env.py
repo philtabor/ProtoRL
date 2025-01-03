@@ -116,7 +116,8 @@ class CloudpickleWrapper:
 
 
 
-def make_single_env(env_id, use_atari=False, pixel_env=False, repeat=4,
+def make_single_env(env_id, seed=None, rank=0,
+                    use_atari=False, pixel_env=False, repeat=4,
                     no_ops=0, package_to_import=None, **kwargs):
     def _thunk():
         try:
@@ -143,10 +144,12 @@ def make_single_env(env_id, use_atari=False, pixel_env=False, repeat=4,
         if pixel_env:
             # env = wrappers.GreyscaleWrapper(env)
             env = PreprocessFrame(shape=(60, 80, 1), env=env, scale_obs=False)
-            env = PyTorchObsWrapper(env)
+            # env = PyTorchObsWrapper(env)
             env = StackFrames(repeat=4, env=env)
 
         env = Monitor(env)
+
+        env.action_space.seed(seed+rank)
         return env
 
     return _thunk
@@ -158,9 +161,9 @@ def make_vec_envs(env_name, use_atari=False, seed=None, n_threads=2,
     # seed = seed + 10000 * mpi_rank if seed is not None else None
     seed = seed or 1
     set_global_seeds(seed)
-    envs = [make_single_env(env_name, use_atari,
+    envs = [make_single_env(env_id=env_name, use_atari=use_atari, rank=i, seed=seed,
                             package_to_import=package_to_import, **kwargs)
-            for _ in range(n_threads)]
+            for i in range(n_threads)]
     envs = SubprocVecEnv(envs, seed)
 
     return envs
