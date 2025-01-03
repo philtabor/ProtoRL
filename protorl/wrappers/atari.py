@@ -170,9 +170,9 @@ class StackFrames(gym.ObservationWrapper):
                             dtype=np.float16)
         self.stack = collections.deque(maxlen=repeat)
 
-    def reset(self):
+    def reset(self, **kwargs):
         self.stack.clear()
-        observation, info = self.env.reset()
+        observation, info = self.env.reset(**kwargs)
         for _ in range(self.stack.maxlen):
             self.stack.append(observation)
 
