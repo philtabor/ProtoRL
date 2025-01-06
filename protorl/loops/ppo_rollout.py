@@ -22,7 +22,7 @@ class EpisodeLoop:
         self.adapt_actions = adapt_actions
         self.step_counter = 0
         self.epoch_counter = 0
-
+        self.rew = []
         self.functions = extra_functionality or []
 
     def run(self, max_steps=1):
@@ -40,7 +40,7 @@ class EpisodeLoop:
             self.seed = None
         else:
             observation, info = self.env.reset()
-        rew = []
+
         while self.step_counter < max_steps:
             action, log_prob = self.agent.choose_action(observation)
             if self.adapt_actions:
@@ -56,7 +56,7 @@ class EpisodeLoop:
                 for d in info:
                     if 'ep_r' in d.keys():
                         score = d['ep_r']
-                        rew.append(score)
+                        self.rew.append(score)
             mask = [0.0 if d or t else 1.0 for d, t in zip(done, trunc)]
             if not self.evaluate:
                 v = self.agent.evaluate_state(observation).squeeze()
@@ -71,10 +71,10 @@ class EpisodeLoop:
                                    for _ in range(self.n_batches)]
                         adv, ret = self.agent.update(transitions, batches, adv, ret)
                     self.epoch_counter += self.n_epochs
-                    avg_score = np.mean(rew) if len(rew) > 0 else -np.inf
+                    avg_score = np.mean(self.rew[-100:]) if len(self.rew) > 0 else -np.inf
                     print(f"Epoch: {self.epoch_counter} avg rollout score: {avg_score:.1f}"
                           f" n_steps {self.step_counter}")
-                    rew = []
+
                     if avg_score is not -np.inf:
                         scores.append(avg_score)
                         steps.append(n_steps)
