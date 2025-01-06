@@ -49,7 +49,8 @@ def main():
     sample_mode = 'prioritized' if use_prioritization else 'uniform'
     ep_loop = EpisodeLoop(agent, env, memory, sample_mode=sample_mode,
                           prioritized=use_prioritization,
-                          load_checkpoint=False, evaluate=False)
+                          load_checkpoint=False, evaluate=False,
+                          print_every=4)
     scores, steps_array = ep_loop.run(n_games)
 
 
