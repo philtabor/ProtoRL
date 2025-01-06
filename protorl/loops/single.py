@@ -4,7 +4,7 @@ from protorl.utils.common import clip_reward
 
 class EpisodeLoop:
     def __init__(self, agent, env, memory,
-                 sample_mode='uniform',
+                 sample_mode='uniform', print_every=1,
                  load_checkpoint=False, clip_reward=False,
                  prioritized=False,
                  evaluate=False):
@@ -12,7 +12,7 @@ class EpisodeLoop:
         self.env = env
         self.memory = memory
         self.sample_mode = sample_mode
-
+        self.print_every = print_every
         self.prioritized = prioritized
         self.load_checkpoint = load_checkpoint
         self.evaluate = evaluate
@@ -28,11 +28,11 @@ class EpisodeLoop:
         scores, steps = [], []
         for i in range(n_episodes):
             done, trunc = False, False
-            observation, _ = self.env.reset()
+            observation, info = self.env.reset()
             score = 0
             while not (done or trunc):
                 action = self.agent.choose_action(observation)
-                observation_, reward, done, trunc, _ = self.env.step(action)
+                observation_, reward, done, trunc, info = self.env.step(action)
                 score += reward
                 r = clip_reward(reward) if self.clip_reward else reward
                 if not self.evaluate:
@@ -49,13 +49,16 @@ class EpisodeLoop:
                             self.agent.update(transitions)
                 observation = observation_
                 n_steps += 1
-            score = np.mean(score)
+            if 'ep_r' in info.keys():
+                score = info['ep_r']
+            # score = np.mean(score)
             scores.append(score)
             steps.append(n_steps)
 
             avg_score = np.mean(scores[-100:])
-            print('episode {} ep score {:.1f} average score {:.1f} n steps {}'.
-                  format(i, score, avg_score,  n_steps))
+            if i % self.print_every == 0 and i > 0:
+                print(f"episode {i} ep score {score:.1f} average score {avg_score:.1f}"
+                      f" n steps {n_steps}")
             if avg_score > best_score:
                 if not self.evaluate:
                     self.agent.save_models()
