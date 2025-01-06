@@ -3,6 +3,8 @@ import gymnasium as gym
 # from gymnasium.wrappers import FrameStackObservation
 from protorl.wrappers.single_threaded import BatchDimensionWrapper
 from protorl.wrappers.atari import PreprocessFrame, RepeatActionAndMaxFrame, StackFrames, EpisodicLifeEnv, NoopResetEnv, FireResetEnv
+from protorl.wrappers.monitor import Monitor
+
 
 def make_env(env_name, use_atari=False, repeat=4,
              no_ops=0, package_to_import=None, **kwargs):
@@ -22,6 +24,7 @@ def make_env(env_name, use_atari=False, repeat=4,
             exit()
 
     if use_atari:
+        env = Monitor(env)
         env = NoopResetEnv(env, 30)
         env = RepeatActionAndMaxFrame(env)
         env = EpisodicLifeEnv(env)
