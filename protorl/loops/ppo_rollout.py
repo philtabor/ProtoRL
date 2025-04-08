@@ -6,7 +6,8 @@ class EpisodeLoop:
     def __init__(self, agent, env, memory, n_epochs, T, n_batches,
                  n_threads=1, print_every=1, adapt_actions=False,
                  load_checkpoint=False, clip_reward=False,
-                 evaluate=False, extra_functionality=None, seed=None):
+                 evaluate=False, extra_functionality=None, seed=None,
+                 window=None):
         self.agent = agent
         self.seed = seed
         self.env = env
@@ -22,6 +23,7 @@ class EpisodeLoop:
         self.adapt_actions = adapt_actions
         self.step_counter = 0
         self.epoch_counter = 0
+        self.window = window
         self.rew = []
         self.functions = extra_functionality or []
 
@@ -57,10 +59,11 @@ class EpisodeLoop:
                     if 'ep_r' in d.keys():
                         score = d['ep_r']
                         self.rew.append(score)
+                        # print(f"episode done, score is {score}")
             mask = [0.0 if d or t else 1.0 for d, t in zip(done, trunc)]
             if not self.evaluate:
-                v = self.agent.evaluate_state(observation).squeeze()
-                v_ = self.agent.evaluate_state(observation_).squeeze()
+                v = self.agent.evaluate_state(observation)
+                v_ = self.agent.evaluate_state(observation_)
                 self.memory.store_transition([observation, action, r,
                                               mask, log_prob, v, v_])
                 if n_steps % self.T == 0:
@@ -71,8 +74,9 @@ class EpisodeLoop:
                                    for _ in range(self.n_batches)]
                         adv, ret = self.agent.update(transitions, batches, adv, ret)
                     self.epoch_counter += self.n_epochs
-                    avg_score = np.mean(self.rew[-100:]) if len(self.rew) > 0 else -np.inf
-                    print(f"Epoch: {self.epoch_counter} avg rollout score: {avg_score:.1f}"
+                    window = self.window or len(self.rew)
+                    avg_score = np.mean(self.rew[-window:]) if len(self.rew) > 0 else -np.inf
+                    print(f"Epoch: {self.epoch_counter} avg rollout score: {avg_score:.3f}"
                           f" n_steps {self.step_counter}")
 
                     if avg_score is not -np.inf:
