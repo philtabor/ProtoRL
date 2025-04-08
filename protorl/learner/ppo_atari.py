@@ -38,13 +38,13 @@ class PPOAtariLearner(Learner):
         s, a, r, d, lp, v, v_ = transitions
         if ext_adv is None and ext_ret is None:
             ext_adv, ext_ret = \
-                calc_adv_and_returns(v, v_, r, d)
+                calc_adv_and_returns(v.squeeze(), v_.squeeze(), r, d)
+
             ext_adv = swap_and_flatten(ext_adv).squeeze()
             ext_ret = swap_and_flatten(ext_ret).squeeze()
         s = swap_and_flatten(s)
         a = swap_and_flatten(a).squeeze()
         lp = swap_and_flatten(lp).squeeze()
-        a_loss, c_loss = 0, 0
         for batch in batches:
             indices = batch[0].to(T.int)
             states = s[indices]
@@ -66,14 +66,11 @@ class PPOAtariLearner(Learner):
             actor_loss -= self.entropy_coefficient * entropy
             ext_critic_loss = F.mse_loss(ext_ret[indices], ext_critic_value.squeeze())
             critic_loss = ext_critic_loss
-            a_loss += actor_loss.mean().item()
-            c_loss += critic_loss.item()
             total_loss = actor_loss.mean() + 0.5 * critic_loss
             self.optimizer.zero_grad()
             total_loss.backward()
             T.nn.utils.clip_grad_norm_(self.actor_critic.parameters(), 0.5)
             self.optimizer.step()
-        # print(f"actor loss: {a_loss:.1f} critic loss {c_loss:.1f}")
         return ext_adv, ext_ret
 
 

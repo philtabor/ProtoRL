@@ -43,7 +43,7 @@ class PPOLearner(Learner):
         s, a, r, d, lp, v, v_ = transitions
 
         if ext_adv is None and ext_ret is None:
-            ext_adv, ext_ret = calc_adv_and_returns(v, v_, r, d)
+            ext_adv, ext_ret = calc_adv_and_returns(v.squeeze(), v_.squeeze(), r, d)
             ext_adv = swap_and_flatten(ext_adv).squeeze()
             ext_ret = swap_and_flatten(ext_ret).squeeze()
 
