@@ -26,7 +26,8 @@ def main():
               'mask', 'log_probs', 'values', 'values_']
     state_shape = (T, n_threads, *env.observation_space.shape)
     action_shape = probs_shape = (T, n_threads, env.action_space.shape[0])
-    reward_shape = mask_shape = values_shape = (T, n_threads)
+    reward_shape = mask_shape = (T, n_threads)
+    values_shape = (T, n_threads, 1)
     vals = [np.zeros(state_shape, dtype=np.float32),
             np.zeros(action_shape, dtype=np.float32),
             np.zeros(reward_shape, dtype=np.float32),
