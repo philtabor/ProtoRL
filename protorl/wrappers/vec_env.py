@@ -40,7 +40,7 @@ class SubprocVecEnv:
         self.remotes, self.work_remotes = zip(*[mp.Pipe()
                                                 for _ in range(nenvs)])
         self.ps = [mp.Process(target=worker, args=(work_remote, remote,
-                              CloudpickleWrapper(env_fn)))
+                              CloudpickleWrapper(env_fn)), daemon=True)
                    for (work_remote, remote, env_fn) in
                    zip(self.work_remotes, self.remotes, env_fns)]
 
@@ -116,9 +116,24 @@ class CloudpickleWrapper:
 
 
 
-def make_single_env(env_id, seed=None, rank=0,
-                    use_atari=False, pixel_env=False, repeat=4,
-                    no_ops=0, package_to_import=None, **kwargs):
+def make_single_env(env_id,
+                    seed=None,
+                    rank=0,
+                    # use_atari=False,
+                    pixel_env=False,
+                    repeat=4,
+                    no_ops=30,
+                    package_to_import=None, 
+                    scale_obs=True,
+                    use_noops=False,
+                    terminal_on_life_loss=False,
+                    preprocess_frames=True,
+                    stack_frames=True,
+                    max_and_skip=True,
+                    fire_reset_env=True,
+                    new_img_shape=(84, 84, 1),
+                    additional_wrapper=None,
+                    **kwargs):
     def _thunk():
         try:
             env = gym.make(env_id, **kwargs)
@@ -132,22 +147,24 @@ def make_single_env(env_id, seed=None, rank=0,
             else:
                 print(f"Error {e} encountered.")
 
-        # TODO - need a better way of applying wrappers
-        if use_atari:
-            env = NoopResetEnv(env, 30)
-            env = RepeatActionAndMaxFrame(env)
-            env = EpisodicLifeEnv(env)
-            env = FireResetEnv(env)
-            env = PreprocessFrame(shape=(84, 84, 1), env=env, scale_obs=True)
-            env = StackFrames(repeat=4, env=env)
-
-        if pixel_env:
-            # env = wrappers.GreyscaleWrapper(env)
-            env = PreprocessFrame(shape=(60, 80, 1), env=env, scale_obs=False)
-            # env = PyTorchObsWrapper(env)
-            env = StackFrames(repeat=4, env=env)
-
         env = Monitor(env)
+
+        # TODO - need a better way of applying wrappers
+        if pixel_env:
+            if use_noops:
+                env = NoopResetEnv(env, no_ops)
+            if max_and_skip:
+                env = RepeatActionAndMaxFrame(env)
+            if terminal_on_life_loss:
+                env = EpisodicLifeEnv(env)
+            if fire_reset_env:
+                env = FireResetEnv(env)
+            if preprocess_frames:
+                env = PreprocessFrame(shape=new_img_shape, env=env, scale_obs=scale_obs)
+            if stack_frames:
+                env = StackFrames(repeat=repeat, env=env)
+            if additional_wrapper:
+                env = additional_wrapper(env)
 
         env.action_space.seed(seed+rank)
         return env
@@ -155,14 +172,45 @@ def make_single_env(env_id, seed=None, rank=0,
     return _thunk
 
 
-def make_vec_envs(env_name, use_atari=False, seed=None, n_threads=2,
-                  package_to_import=None, **kwargs):
-    # mpi_rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
+def make_vec_envs(env_id,
+                  n_threads=2,
+                  seed=None,
+                  pixel_env=False,
+                  repeat=4,
+                  no_ops=30,
+                  package_to_import=None, 
+                  scale_obs=True,
+                  use_noops=False,
+                  terminal_on_life_loss=False,
+                  preprocess_frames=True,
+                  stack_frames=True,
+                  max_and_skip=True,
+                  fire_reset_env=True,
+                  new_img_shape=(84, 84, 1),
+                  additional_wrapper=None,
+                  **kwargs):
+
+                     # mpi_rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
     # seed = seed + 10000 * mpi_rank if seed is not None else None
     seed = seed or 1
     set_global_seeds(seed)
-    envs = [make_single_env(env_id=env_name, use_atari=use_atari, rank=i, seed=seed,
-                            package_to_import=package_to_import, **kwargs)
+    envs = [make_single_env(env_id=env_id,
+                            rank=i,
+                            seed=seed,
+                            package_to_import=package_to_import,
+                            scale_obs=scale_obs,
+                            pixel_env=pixel_env,
+                            repeat=repeat,
+                            no_ops=no_ops,
+                            use_noops=use_noops,
+                            terminal_on_life_loss=terminal_on_life_loss,
+                            preprocess_frames=preprocess_frames,
+                            stack_frames=stack_frames,
+                            max_and_skip=max_and_skip,
+                            fire_reset_env=fire_reset_env,
+                            new_img_shape=new_img_shape,
+                            additional_wrapper=additional_wrapper,
+                            **kwargs)
             for i in range(n_threads)]
     envs = SubprocVecEnv(envs, seed)
 
