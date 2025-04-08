@@ -71,17 +71,17 @@ def clip_reward(x):
             return r
 
 
-def calc_adv_and_returns(values, values_, rewards, dones,
+def calc_adv_and_returns(values, values_, rewards, one_minus_dones,
                          gamma=0.99, gae_lambda=0.95):
     # TODO - multi gpu support
     device = 'cuda:0' if T.cuda.is_available() else 'cpu'
     deltas = rewards + gamma * values_ - values
     deltas = deltas.cpu().numpy()
-    dones = dones.cpu().numpy()
+    one_minus_dones = one_minus_dones.cpu().numpy()
     adv = [0]
     for step in reversed(range(deltas.shape[0])):
         advantage = deltas[step] +\
-            gamma * gae_lambda * adv[-1] * dones[step]
+            gamma * gae_lambda * adv[-1] * one_minus_dones[step]
         adv.append(advantage)
     adv.reverse()
     adv = adv[:-1]
