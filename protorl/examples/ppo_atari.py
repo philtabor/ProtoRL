@@ -19,8 +19,17 @@ def main():
     T = int(horizon // n_threads)
     n_batches = int(horizon // bs)
 
-    env = make_vec_envs(env_name, n_threads=n_threads, seed=0, use_atari=True,
-                        pixel_env=False)
+    env = make_vec_envs(env_name, n_threads=n_threads, seed=0,
+                        pixel_env=True,
+                        scale_obs=True,
+                        new_img_shape=(84, 84, 1),
+                        use_noops=False, # True for games other than Montezuma
+                        stack_frames=True,
+                        terminal_on_life_loss=False, # True for games other than Montezuma
+                        fire_reset_env=False, # Maybe true for games other than Montezuma
+                        max_and_skip=True,
+                        preprocess_frames=True,
+                        )
 
     fields = ['states', 'actions', 'rewards',
               'mask', 'log_probs', 'values', 'values_']
@@ -51,7 +60,7 @@ def main():
     actor = Actor(actor_critic, policy)
 
     actor_critic = PPOAtariNetwork(env.observation_space.shape, env.action_space.n)
-    learner = Learner(actor_critic, 'discrete', policy, lr=3e-4, entropy_coeff=1e-3, policy_clip=0.1)
+    learner = Learner(actor_critic, 'discrete', policy, lr=1e-4, entropy_coeff=1e-3, policy_clip=0.1)
 
     agent = Agent(actor, learner)
 
