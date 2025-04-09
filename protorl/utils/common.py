@@ -75,7 +75,7 @@ def calc_adv_and_returns(values, values_, rewards, one_minus_dones,
                          gamma=0.99, gae_lambda=0.95):
     # TODO - multi gpu support
     device = 'cuda:0' if T.cuda.is_available() else 'cpu'
-    deltas = rewards + gamma * values_ - values
+    deltas = rewards + gamma * values_ * one_minus_dones - values
     deltas = deltas.cpu().numpy()
     one_minus_dones = one_minus_dones.cpu().numpy()
     adv = [0]
