@@ -59,7 +59,6 @@ class EpisodeLoop:
                     if 'ep_r' in d.keys():
                         score = d['ep_r']
                         self.rew.append(score)
-                        # print(f"episode done, score is {score}")
             mask = [0.0 if d or t else 1.0 for d, t in zip(done, trunc)]
             if not self.evaluate:
                 v = self.agent.evaluate_state(observation)
