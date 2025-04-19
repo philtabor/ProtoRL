@@ -8,14 +8,14 @@ class PPOAtariActor(Actor):
         self.actor_critic = actor_critic
 
     def save_models(self, fname=None):
-        fname = fname or 'models/ppo_atari_' + self.action_type + '_actor'
+        fname = fname or 'models/ppo_atari_actor'
         checkpoint = {
             'actor_critic_model_state_dict': self.actor_critic.state_dict(),
         }
         T.save(checkpoint, fname)
 
     def load_models(self, fname=None):
-        fname = fname or 'models/ppo_atari_' + self.action_type + '_actor'
+        fname = fname or 'models/ppo_atari_actor'
         checkpoint = T.load(fname)
         self.actor_critic.load_state_dict(checkpoint['actor_critic_model_state_dict'])
 
