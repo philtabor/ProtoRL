@@ -21,7 +21,7 @@ class PPOAtariLearner(Learner):
         self.optimizer = T.optim.Adam(self.actor_critic.parameters(), lr=lr, eps=1e-5)
 
     def save_models(self, fname=None):
-        fname = fname or 'models/ppo_atari_' + self.action_type + '_learner'
+        fname = fname or 'models/ppo_atari_learner'
         checkpoint = {
             'actor_critic_model_state_dict': self.actor_critic.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
@@ -29,22 +29,28 @@ class PPOAtariLearner(Learner):
         T.save(checkpoint, fname)
 
     def load_models(self, fname=None):
-        fname = fname or 'models/ppo_atari_' + self.action_type + '_learner'
+        fname = fname or 'models/ppo_atari_learner'
         checkpoint = T.load(fname)
         self.actor_critic.load_state_dict(checkpoint['actor_critic_model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     def update(self, transitions, batches, ext_adv, ext_ret):
         s, a, r, d, lp, v, v_ = transitions
-        if ext_adv is None and ext_ret is None:
-            ext_adv, ext_ret = \
-                calc_adv_and_returns(v.squeeze(), v_.squeeze(), r, d)
-
-            ext_adv = swap_and_flatten(ext_adv).squeeze()
-            ext_ret = swap_and_flatten(ext_ret).squeeze()
         s = swap_and_flatten(s)
         a = swap_and_flatten(a).squeeze()
         lp = swap_and_flatten(lp).squeeze()
+
+        if ext_adv is None and ext_ret is None:
+            d = swap_and_flatten(d)
+            v = swap_and_flatten(v)
+            v_ = swap_and_flatten(v_)
+            r = swap_and_flatten(r)
+
+            ext_adv, ext_ret = \
+                calc_adv_and_returns(v, v_, r, d)
+            ext_adv = ext_adv.squeeze()
+            ext_ret = ext_ret.squeeze()
+
         for batch in batches:
             indices = batch[0].to(T.int)
             states = s[indices]
