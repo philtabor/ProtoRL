@@ -10,11 +10,11 @@ from protorl.learner.ppo_atari import PPOAtariLearner as Learner
 
 
 def main():
-    # env_name = "BreakoutNoFrameskip-v4"
-    env_name = "MontezumaRevengeNoFrameskip-v4"
+    # env_name = "MontezumaRevengeNoFrameskip-v4"
+    env_name = "PongNoFrameskip-v4"
     bs = 64
-    n_threads = 128
-    n_epochs = 4
+    n_threads = 8 # 128 for Montezuma
+    n_epochs = 10 # 4 for Montezuma
     horizon = 16384
     T = int(horizon // n_threads)
     n_batches = int(horizon // bs)
@@ -23,10 +23,10 @@ def main():
                         pixel_env=True,
                         scale_obs=True,
                         new_img_shape=(84, 84, 1),
-                        use_noops=False, # True for games other than Montezuma
+                        use_noops=True, # True for games other than Montezuma
                         stack_frames=True,
-                        terminal_on_life_loss=False, # True for games other than Montezuma
-                        fire_reset_env=False, # Maybe true for games other than Montezuma
+                        terminal_on_life_loss=True, # True for games other than Montezuma
+                        fire_reset_env=True, # Maybe true for games other than Montezuma
                         max_and_skip=True,
                         preprocess_frames=True,
                         )
@@ -60,7 +60,7 @@ def main():
     actor = Actor(actor_critic, policy)
 
     actor_critic = PPOAtariNetwork(env.observation_space.shape, env.action_space.n)
-    learner = Learner(actor_critic, 'discrete', policy, lr=1e-4, entropy_coeff=1e-3, policy_clip=0.1)
+    learner = Learner(actor_critic, 'discrete', policy, lr=3e-4)
 
     agent = Agent(actor, learner)
 
