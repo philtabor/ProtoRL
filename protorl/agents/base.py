@@ -18,7 +18,7 @@ class Agent:
     def update_networks(self):
         raise NotImplementedError
 
-    def update(self, transitions):
+    def update(self, transitions, *args):
         raise NotImplementedError
 
     def choose_action(self, observation):
