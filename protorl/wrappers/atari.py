@@ -1,7 +1,29 @@
+from copy import copy
 import collections
 import cv2
 import numpy as np
 import gymnasium as gym
+
+
+class MontezumaInfoWrapper(gym.Wrapper):
+    def __init__(self, env):
+        super().__init__(env)
+        self.visited_rooms = set()
+
+    def step(self, action):
+        obs, rew, done, trunc, info = self.env.step(action)
+
+        self.visited_rooms.add(self.env.unwrapped.ale.getRAM()[3])
+
+        if 'rooms_visited' not in info:
+            info['rooms_visited'] = {}
+
+        info['rooms_visited'].update(visited_rooms=copy(self.visited_rooms))
+
+        if done or trunc:
+            self.visited_rooms.clear()
+
+        return obs, rew, done, trunc, info
 
 
 class EpisodicLifeEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
