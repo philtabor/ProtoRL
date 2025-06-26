@@ -25,7 +25,7 @@ def actor_fn(name, actor_creator, network_creator, policy_creator,
         actor.load_models()
 
     n_steps = 0
-    best_score = env.reward_range[0]
+    best_score = -np.inf
     scores, steps = [], []
     t_start = time.time()
     i = 0
