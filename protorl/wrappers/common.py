@@ -7,7 +7,11 @@ from protorl.wrappers.monitor import Monitor
 
 
 def make_env(env_name, use_atari=False, repeat=4,
-             no_ops=0, package_to_import=None, **kwargs):
+             no_ops=30, package_to_import=None, 
+             no_op=True, repeat_and_max=True,
+             episodic_life=False, fire_reset=True,
+             preprocess=True, stack=True, add_batch=True,
+             **kwargs):
     try:
         if use_atari:
             import ale_py
@@ -25,15 +29,22 @@ def make_env(env_name, use_atari=False, repeat=4,
 
     if use_atari:
         env = Monitor(env)
-        env = NoopResetEnv(env, 30)
-        env = RepeatActionAndMaxFrame(env)
-        env = EpisodicLifeEnv(env)
-        env = FireResetEnv(env)
-        env = PreprocessFrame(shape=(84, 84, 1), env=env, scale_obs=True)
-        env = StackFrames(repeat=4, env=env) 
+        if no_op:
+            env = NoopResetEnv(env, no_ops)
+        if repeat_and_max:
+            env = RepeatActionAndMaxFrame(env)
+        if episodic_life:
+            env = EpisodicLifeEnv(env)
+        if fire_reset:
+            env = FireResetEnv(env)
+        if preprocess:
+            env = PreprocessFrame(shape=(84, 84, 1), env=env, scale_obs=True)
+        if stack:
+            env = StackFrames(repeat=4, env=env)
         # env = gym.wrappers.AtariPreprocessing(env, noop_max=no_ops, scale_obs=True)
         # env = FrameStackObservation(env, stack_size=repeat)
-        env = BatchDimensionWrapper(env)
+        if add_batch:
+            env = BatchDimensionWrapper(env)
 
     return env
 
