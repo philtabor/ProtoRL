@@ -3,6 +3,7 @@ from protorl.memory.generic import initialize_memory
 
 class MemoryServer:
     def __init__(self, observation_shape, config,
+                 fields=None, vals=None,
                  extra_fields=None, extra_vals=None):
         self.replay_buffer = initialize_memory(obs_shape=observation_shape,
                                                n_actions=config.n_actions,
@@ -15,12 +16,15 @@ class MemoryServer:
                                                batch_size=config.batch_size,
                                                warmup=config.warmup,
                                                extra_fields=extra_fields,
-                                               extra_vals=extra_vals)
+                                               extra_vals=extra_vals,
+                                               fields=fields,
+                                               vals=vals)
         self.prioritized = config.use_prioritization
         self.n_batches = config.n_batches_to_sample
+        self.lock = threading.Lock()
 
     def add(self, transitions, vals=None):
-        with threading.Lock():
+        with self.lock:
             for idx, transition in enumerate(transitions):
                 # val = vals[idx] if vals is not None else None
                 self.replay_buffer.store_transition(transition, vals[idx])
@@ -28,17 +32,17 @@ class MemoryServer:
     def sample(self):
         mode = 'prioritized' if self.prioritized else 'uniform'
         batch = []
-        with threading.Lock():
+        with self.lock:
             for _ in range(self.n_batches):
                 batch.append(self.replay_buffer.sample_buffer(mode))
         return batch
 
     def update_priorities(self, indices, priorities):
-        with threading.Lock():
+        with self.lock:
             self.replay_buffer.update_priorities(indices, priorities)
 
     def ready(self):
-        with threading.Lock():
+        with self.lock:
             return self.replay_buffer.ready()
 
 
