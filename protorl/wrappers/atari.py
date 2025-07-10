@@ -140,7 +140,7 @@ class RepeatActionAndMaxFrame(gym.Wrapper):
         super(RepeatActionAndMaxFrame, self).__init__(env)
         self.repeat = repeat
         self.shape = env.observation_space.low.shape
-        self.frame_buffer = np.zeros(shape=(2, *self.shape), dtype=np.float16)
+        self.frame_buffer = np.zeros(shape=(2, *self.shape), dtype=np.float32)
         self.clip_reward = clip_reward
         self.no_ops = no_ops
         self.fire_first = fire_first
@@ -170,7 +170,7 @@ class PreprocessFrame(gym.ObservationWrapper):
         high = 1.0 if scale_obs else 255.0
         self.observation_space = gym.spaces.Box(low=0.0, high=high,
                                                 shape=self.shape,
-                                                dtype=np.float16)
+                                                dtype=np.float32)
 
     def observation(self, obs):
         new_frame = cv2.cvtColor(obs.astype(np.uint8), cv2.COLOR_RGB2GRAY)
@@ -180,7 +180,7 @@ class PreprocessFrame(gym.ObservationWrapper):
         if self.scale_obs:
             new_obs = new_obs / 255.0
 
-        return new_obs.astype(np.float16)
+        return new_obs.astype(np.float32)
 
 
 class StackFrames(gym.ObservationWrapper):
@@ -189,7 +189,7 @@ class StackFrames(gym.ObservationWrapper):
         self.observation_space = gym.spaces.Box(
                             env.observation_space.low.repeat(repeat, axis=0),
                             env.observation_space.high.repeat(repeat, axis=0),
-                            dtype=np.float16)
+                            dtype=np.float32)
         self.stack = collections.deque(maxlen=repeat)
 
     def reset(self, **kwargs):
