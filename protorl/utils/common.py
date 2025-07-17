@@ -21,7 +21,12 @@ def calculate_conv_output_dims(input_dims=(4, 84, 84),
                                channels=(32, 64, 64),
                                kernels=(8, 4, 3),
                                strides=(4, 2, 1)):
-    curr_channels, curr_height, curr_width = input_dims
+    # if we haven't used the BatchDimension wrapper, then the input dims will be something like [4, 84, 84]
+    # if we have, then it will be something like [1, 4, 84, 84]
+    if len(input_dims) == 3:
+        curr_channels, curr_height, curr_width = input_dims
+    else:
+        _, curr_channels, curr_height, curr_width = input_dims
 
     layer_outputs = []
 
@@ -52,7 +57,7 @@ def action_adapter(a, max_a):
 
 
 def clip_reward(x):
-    if type(x) is np.ndarray:
+    if isinstance(x, np.ndarray):
         rewards = []
         for r in x:
             if r < -1:
@@ -63,12 +68,12 @@ def clip_reward(x):
                 rewards.append(r)
         return np.array(rewards)
     else:
-        if r > 1:
+        if x > 1:
             return 1
-        elif r < -1:
+        elif x < -1:
             return -1
         else:
-            return r
+            return x
 
 
 def calc_adv_and_returns(values, values_, rewards, one_minus_dones,
