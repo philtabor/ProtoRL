@@ -1,4 +1,5 @@
 import os
+import warnings
 import numpy as np
 import torch.multiprocessing as mp
 from protorl.policies.epsilon_greedy import EpsilonGreedyPolicy
@@ -14,23 +15,25 @@ from protorl.config.policy import PolicyConfig
 
 
 def main():
-    config = Config(env_name='CartPole-v1',
-                    use_prioritization=False,
-                    use_atari=False,
-                    total_time=600,
+    warnings.filterwarnings('error', category=RuntimeWarning)
+
+    config = Config(env_name='StarGunnerNoFrameskip-v4',
+                    use_prioritization=True,
+                    use_atari=True,
+                    total_time=36000,
                     load_checkpoint=False,
                     evaluate=False,
                     n_threads=32,
                     use_double=True,
                     use_dueling=True,
-                    clip_reward=False,
-                    memory_capacity=1_000_000,
+                    clip_reward=True,
+                    memory_capacity=100_000,
                     batch_size=64,
                     alpha=0.6,
                     beta=0.4,
                     learner_lr=1e-4,
                     action_space='discrete',
-                    warmup=10_000,
+                    warmup=0,#10_000,
                     n_step=3,
                     # make sure batches to store is a multiple of n_step!
                     n_batches_to_store=90,
@@ -47,7 +50,7 @@ def main():
                                         eps_min=0.1)]
 
     for i in range(config.n_threads-1):
-        actor_policy_config.append(PolicyConfig(n_actions=n_actions, 
+        actor_policy_config.append(PolicyConfig(n_actions=n_actions,
                                         eps_dec=0,
                                         eps_start=epsilons[i+1],
                                         eps_min=epsilons[i+1]))
@@ -76,12 +79,21 @@ def main():
     request_queue = mp.Queue()
     response_queue = mp.Queue()
 
-    extra_fields = ['gammas']
-    extra_vals = [np.zeros(config.memory_capacity, dtype=np.float32)]
+    fields = ['states', 'actions', 'rewards', 'states_', 'dones', 'gammas']
+    max_mem_size = config.memory_capacity
+    state_shape = (max_mem_size,*observation_shape)
+    action_shape = done_shape = reward_shape = (max_mem_size)
+
+    vals = [np.zeros(state_shape, dtype=np.float32),
+            np.zeros(action_shape, dtype=np.float32),
+            np.zeros(reward_shape, dtype=np.float32),
+            np.zeros(state_shape, dtype=np.float32),
+            np.zeros(done_shape, dtype=np.float32),
+            np.zeros(reward_shape, dtype=np.float32)]
     ps = [mp.Process(target=memory_server_process,
                      args=(observation_shape, config,
                            request_queue, response_queue,
-                           extra_fields, extra_vals))]
+                           fields, vals))]
 
     ps.append(mp.Process(target=learner_fn, args=(apex_learner,
                                                   config,

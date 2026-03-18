@@ -13,13 +13,15 @@ def actor_fn(name, actor_creator, network_creator, policy_creator,
              config, policy_config):
     memory_client = MemoryClient(request_queue, response_queue)
 
-    env = make_env(config.env_name, use_atari=config.use_atari)
+    env = make_env(config.env_name, use_atari=config.use_atari, episodic_life=True)
 
     policy = policy_creator(config=policy_config)
 
     networks = network_creator(env, config=config, device='cpu')
 
     actor = actor_creator(*networks, config=config, policy=policy, name=name)
+
+    lock = threading.Lock()
 
     if config.load_checkpoint or config.evaluate:
         actor.load_models()
@@ -72,8 +74,8 @@ def actor_fn(name, actor_creator, network_creator, policy_creator,
         avg_score = np.mean(scores[-100:])
 
         if name == '0':
-            print('thread {} episode {} ep score {:.1f} average score {:.1f} n steps {} learner steps {} time {:.1f}'.
-                format(name, i, score, avg_score,  n_steps, global_idx.value, elapsed_time))
+            print(f'thread {name} episode {i} ep score {score:.1f} average score {avg_score:.1f} '
+                  f'n steps {n_steps} learner steps {global_idx.value} time {elapsed_time:.1f}')
 
         if avg_score > best_score:
             if not config.evaluate:
@@ -81,7 +83,7 @@ def actor_fn(name, actor_creator, network_creator, policy_creator,
             best_score = avg_score
 
     print(f'exiting thread {name}')
-    with threading.Lock():
+    with lock:
         active_threads.value -= 1
 
     memory_client.exit()

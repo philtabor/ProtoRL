@@ -20,5 +20,5 @@ class Actor:
         for param, target in zip(src.parameters(), dest.parameters()):
             target.data.copy_(tau * param.data + (1 - tau) * target.data)
 
-    def choose_action(self, observation):
+    def choose_action(self, observation, *args, **kwargs):
         raise NotImplementedError

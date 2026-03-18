@@ -1,0 +1,9 @@
+numpy<2.0,>=1.23
+torch==2.2
+gymnasium
+gymnasium[accept-rom-license]
+gymnasium[mujoco]
+gymnasium[box2d]
+gymnasium[atari]
+opencv-python
+matplotlib

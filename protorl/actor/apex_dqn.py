@@ -70,6 +70,9 @@ class ApexActor(Actor):
         exp = convert_arrays_to_tensors(transitions, self.device)
         states, actions, R, states_, dones, gammas = exp
 
+        states = states.squeeze(1)
+        states_ = states_.squeeze(1)
+
         indices = np.arange(len(states))
         V_s, A_s = self.q_eval(states)
         V_s_, A_s_ = self.q_next(states_)
@@ -93,4 +96,5 @@ class ApexActor(Actor):
 
         td_error = np.abs((q_target.detach().cpu().numpy() -
                             q_pred.detach().cpu().numpy()))
+        td_error = np.clip(td_error, 0., 1.)
         return td_error

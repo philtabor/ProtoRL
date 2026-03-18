@@ -64,22 +64,21 @@ class ApexLearner(Learner):
 
         indices = np.arange(len(states))
 
-        states = states.to(self.device)
+        states = states.to(self.device).squeeze(1)
         actions = actions.to(self.device)
         rewards = rewards.to(self.device)
-        states_ = states_.to(self.device)
+        states_ = states_.to(self.device).squeeze(1)
         dones = dones.to(self.device)
         gammas = gammas.to(self.device)
 
         V_s, A_s = self.q_eval(states)
         V_s_, A_s_ = self.q_next(states_)
 
-
         q_pred = T.add(V_s,
                        (A_s - A_s.mean(dim=1,
-                                       keepdim=True)))[indices, actions]
+                                       keepdim=True)))[indices, actions.to(T.long)]
         q_next = T.add(V_s_, (A_s_ - A_s_.mean(dim=1, keepdim=True)))
-        q_next[dones] = 0.0
+        q_next[dones.bool()] = 0.0
 
         if self.use_double:
             V_s_eval, A_s_eval = self.q_eval(states_)
@@ -101,7 +100,7 @@ class ApexLearner(Learner):
 
         loss = self.loss(q_target, q_pred).to(self.device)
         loss.backward()
-        T.nn.utils.clip_grad_norm_(self.q_eval.parameters(), 1)
+        T.nn.utils.clip_grad_norm_(self.q_eval.parameters(), 10)
         self.optimizer.step()
         self.learn_step_counter += 1
         if self.prioritized:

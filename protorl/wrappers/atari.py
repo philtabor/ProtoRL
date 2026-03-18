@@ -164,7 +164,7 @@ class RepeatActionAndMaxFrame(gym.Wrapper):
 
 class PreprocessFrame(gym.ObservationWrapper):
     def __init__(self, shape, env=None, scale_obs=True):
-        super(PreprocessFrame, self).__init__(env)
+        super().__init__(env)
         self.shape = (shape[2], shape[0], shape[1])
         self.scale_obs = scale_obs
         high = 1.0 if scale_obs else 255.0

@@ -41,11 +41,13 @@ def make_env(env_name, use_atari=False, repeat=4,
         if stack:
             env = StackFrames(repeat=repeat, env=env)
         if add_batch:
+            # We generally want to add a batch dimension for pixel environments because our
+            # CNN expects a batched input: (Batch size, Channels, Height, Width)
             env = BatchDimensionWrapper(env)
 
     return env
 
-class PyTorchObsWrapper(gym.ObservationWrapper):
+class PyTorchObsWrapper(gym.Wrapper):
     def __init__(self, env=None):
         super().__init__(env)
         obs_shape = self.observation_space.shape
