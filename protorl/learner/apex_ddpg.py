@@ -12,7 +12,6 @@ class ApexLearner(Learner):
         self.critic = critic_network
         self.target_actor = target_actor_network
         self.target_critic = target_critic_network
-
         if config:
             self.prioritized = config.use_prioritization
             actor_lr = config.actor_lr
@@ -60,11 +59,14 @@ class ApexLearner(Learner):
         self.update_network_parameters(self.critic, self.target_critic)
 
     def update(self, transitions):
-        if self.prioritized:
+        sample_idx = None
+        td_error = None
+        prioritized = self.prioritized
+
+        if prioritized:
             sample_idx, states, actions, rewards, states_, dones, gammas, _ = transitions
         else:
             states, actions, rewards, states_, dones, gammas = transitions
-
         states = states.to(self.device)
         actions = actions.to(self.device)
         rewards = rewards.to(self.device)
@@ -78,15 +80,14 @@ class ApexLearner(Learner):
 
         critic_value_[dones] = 0.0
 
-        target = rewards + self.gamma*gammas * critic_value_
+        target = rewards + gammas * critic_value_ # the gamma coefficients are calculated by the nstep bootstrap
 
         self.critic_optimizer.zero_grad()
         self.actor_optimizer.zero_grad()
 
-        if self.prioritized:
-            td_error = 0.5 * ((target.detach().cpu().numpy() - \
-                               critic_value.detach().cpu().numpy())**2)
-            td_error = np.clip(td_error, 0.0, 1.0)
+        if prioritized:
+            td_error = 0.5 * (target.detach().cpu() - critic_value.detach().cpu())**2
+            td_error = T.clamp(td_error, 1e-5, 1.)
 
         critic_loss = F.mse_loss(target, critic_value)
         critic_loss.backward()
@@ -103,5 +104,9 @@ class ApexLearner(Learner):
 
         self.actor_optimizer.step()
 
-        if self.prioritized:
-            return sample_idx, td_error
+        if not prioritized:
+            return None
+
+        assert sample_idx is not None
+        assert td_error is not None
+        return sample_idx, td_error
