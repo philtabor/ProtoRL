@@ -8,8 +8,8 @@ import torch.multiprocessing as mp
 from protorl.policies.epsilon_greedy import EpsilonGreedyPolicy
 from protorl.wrappers.common import make_env
 from protorl.utils.network_utils import make_dqn_networks
-from protorl.runners.apex_atari_actor import actor_fn
-from protorl.runners.apex_atari_learner import learner_fn
+from protorl.runners.apex_actor import actor_fn
+from protorl.runners.apex_learner import learner_fn
 from protorl.actor.apex_dqn import ApexActor as Actor
 from protorl.learner.apex_dqn import ApexLearner as Learner
 from protorl.config.general import Config
@@ -18,13 +18,13 @@ from protorl.config.policy import PolicyConfig
 
 def main():
 
-    config = Config(env_name='PongNoFrameskip-v4',
+    config = Config(env_name='SeaquestNoFrameskip-v5',
                     use_prioritization=True,
                     use_atari=True,
                     total_time=36000,
                     load_checkpoint=False,
                     evaluate=False,
-                    n_threads=28,
+                    n_threads=24,
                     use_double=True,
                     use_dueling=True,
                     clip_reward=True,

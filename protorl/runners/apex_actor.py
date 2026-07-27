@@ -99,16 +99,17 @@ def actor_fn(name, actor_creator, network_creator, policy_creator,
         avg_score = np.mean(scores[-100:])
 
         if name == '0':
-            global_steps = global_memory_idx.value
-            global_sps = global_steps / elapsed_time
-            updates_per_second = global_idx.value / elapsed_time
-            replay_ratio = config.batch_size * global_idx.value / global_steps
-            # print(f'episode {i} ep score {score:.1f} average score {avg_score:.1f} '
-            #      f'n steps {n_steps} learner steps {global_idx.value} time {elapsed_time:.1f}')
+            # global_steps = global_memory_idx.value
+            # global_sps = global_steps / elapsed_time
+            # updates_per_second = global_idx.value / elapsed_time
+            # replay_ratio = config.batch_size * global_idx.value / global_steps
+            print(f'episode {i} ep score {score:.1f} average score {avg_score:.1f} '
+                  f'n steps {n_steps} learner steps {global_idx.value} time {elapsed_time:.1f}')
+            """
             print(f"episode {i} ep score {score:.1f} avg score {avg_score:.1f} "
                   f"global steps {global_steps:.1f} steps/sec {global_sps:.2f} learner updates per second {updates_per_second:.2f} "
                   f"replay ratio {replay_ratio:.2f} elapsed wall time {elapsed_time:.1f}")
-
+            """
         if avg_score > best_score:
             if not config.evaluate:
                 actor.save_models()
