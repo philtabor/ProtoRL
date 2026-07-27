@@ -44,7 +44,7 @@ class EpisodeLoop:
                             self.memory.sample_buffer(self.sample_mode)
                         if self.prioritized:
                             s_idx, td_errors = self.agent.update(transitions)
-                            self.memory.update_priorities(s_idx, td_errors)
+                            self.memory.update_priority(s_idx, td_errors)
                         else:
                             self.agent.update(transitions)
                 observation = observation_

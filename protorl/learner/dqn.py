@@ -40,6 +40,12 @@ class DQNLearner(Learner):
                     transitions
         else:
             states, actions, rewards, states_, dones = transitions
+        
+        # we need the batch dimension for action selection, but already have it for learning
+        if len(states.shape) > 4:
+            states = states.squeeze()
+            states_ = states_.squeeze()
+
         indices = np.arange(len(states))
         q_pred = self.q_eval.forward(states)[indices, actions]
 
@@ -57,9 +63,8 @@ class DQNLearner(Learner):
         q_target = rewards + self.gamma * q_next
 
         if self.prioritized:
-            td_error = np.abs((q_target.detach().cpu().numpy() -
-                               q_pred.detach().cpu().numpy()))
-            td_error = np.clip(td_error, 0., 1.)
+            td_error = T.abs((q_target.detach().cpu()-q_pred.detach().cpu()))
+            td_error = T.clamp(td_error, 0., 1.)
 
             q_target *= weights
             q_pred *= weights
@@ -69,4 +74,4 @@ class DQNLearner(Learner):
         self.optimizer.step()
 
         if self.prioritized:
-            return sample_idx, td_error
+            return sample_idx.cpu(), td_error.detach().cpu()
