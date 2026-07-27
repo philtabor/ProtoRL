@@ -10,6 +10,7 @@ def make_env(env_name, use_atari=False, repeat=4,
              no_op=True, repeat_and_max=True,
              episodic_life=False, fire_reset=True,
              preprocess=True, stack=True, add_batch=True,
+             scale_obs=True,
              **kwargs):
     try:
         if use_atari:
@@ -37,7 +38,7 @@ def make_env(env_name, use_atari=False, repeat=4,
         if fire_reset:
             env = FireResetEnv(env)
         if preprocess:
-            env = PreprocessFrame(shape=(84, 84, 1), env=env, scale_obs=True)
+            env = PreprocessFrame(shape=(84, 84, 1), env=env, scale_obs=scale_obs)
         if stack:
             env = StackFrames(repeat=repeat, env=env)
         if add_batch:
