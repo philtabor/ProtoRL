@@ -140,7 +140,7 @@ class RepeatActionAndMaxFrame(gym.Wrapper):
         super(RepeatActionAndMaxFrame, self).__init__(env)
         self.repeat = repeat
         self.shape = env.observation_space.low.shape
-        self.frame_buffer = np.zeros(shape=(2, *self.shape), dtype=np.float32)
+        self.frame_buffer = np.zeros(shape=(2, *self.shape), dtype=np.uint8)
         self.clip_reward = clip_reward
         self.no_ops = no_ops
         self.fire_first = fire_first
@@ -168,19 +168,22 @@ class PreprocessFrame(gym.ObservationWrapper):
         self.shape = (shape[2], shape[0], shape[1])
         self.scale_obs = scale_obs
         high = 1.0 if scale_obs else 255.0
+        dtype = np.float32 if scale_obs else np.uint8
         self.observation_space = gym.spaces.Box(low=0.0, high=high,
                                                 shape=self.shape,
-                                                dtype=np.float32)
+                                                dtype=dtype)
 
     def observation(self, obs):
         new_frame = cv2.cvtColor(obs.astype(np.uint8), cv2.COLOR_RGB2GRAY)
         resized_screen = cv2.resize(new_frame, self.shape[1:],
                                     interpolation=cv2.INTER_AREA)
         new_obs = np.array(resized_screen, dtype=np.uint8).reshape(self.shape)
+        dtype = np.uint8
         if self.scale_obs:
             new_obs = new_obs / 255.0
+            dtype = np.float32
 
-        return new_obs.astype(np.float32)
+        return new_obs.astype(dtype)
 
 
 class StackFrames(gym.ObservationWrapper):
@@ -197,8 +200,8 @@ class StackFrames(gym.ObservationWrapper):
         observation, info = self.env.reset(**kwargs)
         for _ in range(self.stack.maxlen):
             self.stack.append(observation)
-
-        return np.array(self.stack, dtype=np.float16).reshape(
+        dtype = observation.dtype
+        return np.array(self.stack, dtype=dtype).reshape(
             self.observation_space.low.shape), info
 
     def observation(self, observation):
