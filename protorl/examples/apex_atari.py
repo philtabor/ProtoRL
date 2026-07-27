@@ -24,7 +24,7 @@ def main():
                     total_time=36000,
                     load_checkpoint=False,
                     evaluate=False,
-                    n_threads=56,
+                    n_threads=28,
                     use_double=True,
                     use_dueling=True,
                     clip_reward=True,
@@ -143,4 +143,6 @@ def main():
 
 if __name__ == "__main__":
     os.environ['OMP_NUM_THREADS'] = '1'
+    T.set_num_threads(1)
+    T.set_num_interop_threads(1)
     main()
