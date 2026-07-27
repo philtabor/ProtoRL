@@ -45,10 +45,23 @@ def calculate_conv_output_dims(input_dims=(4, 84, 84),
     return [final_output_size]
 
 
-def convert_arrays_to_tensors(array, device):
+def convert_arrays_to_tensors(array, device, non_blocking=False):
+
+    """    
     tensors = []
     for arr in array:
         tensors.append(T.tensor(np.array(arr), device=device))
+    return tensors
+    """
+    tensors = []
+    for arr in array:
+        cpu_tensor = T.as_tensor(arr)
+        if 'cuda' in str(device):
+            device_tensor = cpu_tensor.pin_memory().to(device=device, non_blocking=non_blocking)
+        else:
+            device_tensor = cpu_tensor
+
+        tensors.append(device_tensor)
     return tensors
 
 
