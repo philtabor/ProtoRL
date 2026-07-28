@@ -71,8 +71,8 @@ class ApexActor(Actor):
         exp = convert_arrays_to_tensors(transitions, self.device)
         states, actions, R, states_, dones, gammas = exp
 
-        states = states.squeeze(1).to(dtype=T.float)
-        states_ = states_.squeeze(1).to(dtype=T.float)
+        states = states.squeeze(1).to(dtype=T.float) / 255.0
+        states_ = states_.squeeze(1).to(dtype=T.float) / 250.0
 
         indices = np.arange(len(states))
         V_s, A_s = self.q_eval(states)

@@ -30,7 +30,7 @@ class ApexLearner(Learner):
 
         # self.optimizer = T.optim.RMSprop(self.q_eval.parameters(), lr=lr)
         self.optimizer = T.optim.Adam(self.q_eval.parameters(), lr=lr)
-        self.loss = T.nn.MSELoss()
+        # self.loss = T.nn.MSELoss()
         self.networks_to_transmit = self.q_eval
 
     def save_models(self, fname=None):
@@ -99,15 +99,20 @@ class ApexLearner(Learner):
             q_next = q_next.max(dim=1)[0]
 
         q_target = rewards + gammas * q_next # the gamma coefficients are calculated by the nstep boostrap
+        td = q_target - q_pred
+        per_sample_loss = td.square()
 
         if self.prioritized:
             td_error = T.abs(q_target - q_pred)
             td_error = T.clamp(td_error, 1e-5, 1.)
             assert weights is not None
-            q_target *= weights# .to(self.device)
-            q_pred *= weights# .to(self.device)
+            per_sample_loss *= weights.to(self.device)
+            loss = per_sample_loss.mean()
+            td_error = td.mean()
+            td_error = T.clamp(td_error, 0., 1.)
+        else:
+            loss = per_sample_loss.mean()
 
-        loss = self.loss(q_target, q_pred).to(self.device)
         loss.backward()
         T.nn.utils.clip_grad_norm_(self.q_eval.parameters(), 10)
         self.optimizer.step()
