@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 import torch as T
@@ -5,11 +6,17 @@ from protorl.utils.common import clip_reward
 from protorl.wrappers.common import make_env
 from protorl.memory.generic import initialize_memory
 
+SAMPLER_CPUS = {0, 32}
+LEARNER_CPUS = {1, 2, 3, 4, 33, 34, 35, 36}
+ACTOR_CPUS = set(range(64)) - SAMPLER_CPUS - LEARNER_CPUS
+
 
 def actor_fn(name, actor_creator, network_creator, policy_creator,
              global_idx, shared_params, update_event,
              active_threads, config, policy_config, fields, vals, global_memory_idx,
              index_lock, tree_lock, shared_sum_tree, param_update_lock):
+    os.sched_setaffinity(0, ACTOR_CPUS)
+    os.nice(5)
     T.set_num_threads(1)
     T.set_num_interop_threads(1)
     env = make_env(config.env_name, use_atari=config.use_atari, episodic_life=True, scale_obs=False)
@@ -99,17 +106,15 @@ def actor_fn(name, actor_creator, network_creator, policy_creator,
         avg_score = np.mean(scores[-100:])
 
         if name == '0':
-            # global_steps = global_memory_idx.value
-            # global_sps = global_steps / elapsed_time
-            # updates_per_second = global_idx.value / elapsed_time
-            # replay_ratio = config.batch_size * global_idx.value / global_steps
-            print(f'episode {i} ep score {score:.1f} average score {avg_score:.1f} '
-                  f'n steps {n_steps} learner steps {global_idx.value} time {elapsed_time:.1f}')
-            """
+            global_steps = global_memory_idx.value
+            global_sps = global_steps / elapsed_time
+            updates_per_second = global_idx.value / elapsed_time
+            replay_ratio = config.batch_size * global_idx.value / global_steps
+            # print(f'episode {i} ep score {score:.1f} average score {avg_score:.1f} '
+            #      f'n steps {n_steps} learner steps {global_idx.value} time {elapsed_time:.1f}')
             print(f"episode {i} ep score {score:.1f} avg score {avg_score:.1f} "
-                  f"global steps {global_steps:.1f} steps/sec {global_sps:.2f} learner updates per second {updates_per_second:.2f} "
-                  f"replay ratio {replay_ratio:.2f} elapsed wall time {elapsed_time:.1f}")
-            """
+                  f"global steps {global_steps:.1f} steps/s {global_sps:.2f} learner steps/s {updates_per_second:.2f} "
+                  f"replay ratio {replay_ratio:.2f} wall time {elapsed_time:.1f}")
         if avg_score > best_score:
             if not config.evaluate:
                 actor.save_models()
