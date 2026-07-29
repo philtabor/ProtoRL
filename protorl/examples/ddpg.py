@@ -9,8 +9,7 @@ from protorl.wrappers.common import make_env
 
 
 def main():
-    # env_name = 'LunarLanderContinuous-v2'
-    env_name = 'LunarLander-v3'
+    env_name = 'LunarLanderContinuous-v3'
     n_games = 1500
     bs = 64
 
