@@ -17,12 +17,14 @@ class NoisyDeterministicPolicy:
     def __call__(self, mu, scale=None, noise_bounds=None):
         scale = scale or self.noise
         mu = mu.detach()
+        shape = np.array(mu.shape)
         # Some environments have max action outside the range of +/- 1 that we
         # get from the tanh activation function
         mu *= T.abs(T.tensor(self.max_action))
-        noise = T.tensor(np.random.normal(scale=scale), dtype=T.float)
+        noise = T.tensor(np.random.normal(scale=scale, size=shape), dtype=T.float, device=mu.device)
         if noise_bounds:
             noise = T.clamp(noise, noise_bounds[0], noise_bounds[1])
+        # print(f"mu device = {mu.device} noise device = {noise.device}")
         mu = mu + noise
         mu = T.clamp(mu, self.min_action, self.max_action)
         return mu
