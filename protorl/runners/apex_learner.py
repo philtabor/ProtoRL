@@ -1,18 +1,24 @@
+import os
 from queue import Empty
 import torch as T
 import torch.multiprocessing as mp
 from protorl.memory.generic import initialize_memory
 from protorl.wrappers.common import make_env
 
+
+SAMPLER_CPUS = {0, 32}
+LEARNER_CPUS = {1, 2, 3, 4, 33, 34, 35, 36}
+ACTOR_CPUS = set(range(64)) - SAMPLER_CPUS - LEARNER_CPUS
+
+
 def sampler_worker(config, obs_shape, fields, vals, global_memory_idx, 
                    index_lock, tree_lock, shared_sum_tree,
                    batch_queue, priority_queue, active_threads, sample_mode):
-    # Re-initialize the buffer 'shell' inside the worker process.
-    # Because you pass the same 'vals', 'shared_sum_tree', and 'locks', 
-    # this instance points to the EXACT same shared memory as the Learner.
-    # from protorl.memory.generic import initialize_memory
+    
+    os.sched_setaffinity(0, SAMPLER_CPUS)
     T.set_num_threads(1)
     T.set_num_interop_threads(1)
+
     replay_buffer = initialize_memory(
         obs_shape=obs_shape,
         n_actions=config.n_actions,
@@ -47,6 +53,7 @@ def sampler_worker(config, obs_shape, fields, vals, global_memory_idx,
 def learner_fn(learner_fn, network_fn, config, shared_params, update_event,
                active_threads, global_idx, fields, vals, obs_shape, global_memory_idx,
                index_lock, tree_lock, shared_sum_tree, param_update_lock):
+    os.sched_setaffinity(0, LEARNER_CPUS)
     T.set_num_threads(4)
     T.set_num_interop_threads(1)
     replay_buffer = initialize_memory(obs_shape=obs_shape,
