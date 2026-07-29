@@ -5,11 +5,12 @@ import torch as T
 
 class DuelingDQNLearner(Learner):
     def __init__(self, online_net, target_net,
-                 use_double=False, prioritized=False,
+                 use_double=False, prioritized=False, use_atari=False,
                  gamma=0.99, lr=1e-4, tau=1.0):
         super().__init__(tau=tau, gamma=gamma)
         self.use_double = use_double
         self.prioritized = prioritized
+        self.use_atari = use_atari
 
         self.q_eval = online_net
         self.q_next = target_net
@@ -42,6 +43,10 @@ class DuelingDQNLearner(Learner):
         else:
             states, actions, rewards, states_, dones = transitions
 
+        if self.use_atari:
+            states /= 255.0
+            states_ /= 255.0
+
         indices = np.arange(len(states))
 
         V_s, A_s = self.q_eval(states)
@@ -66,9 +71,9 @@ class DuelingDQNLearner(Learner):
         q_target = rewards + self.gamma * q_next
 
         if self.prioritized:
-            td_error = np.abs((q_target.detach().cpu().numpy() -
-                               q_pred.detach().cpu().numpy()))
-            td_error = np.clip(td_error, 0., 1.)
+            td_error = T.abs((q_target.detach() -
+                               q_pred.detach()))
+            td_error = T.clamp(td_error, 0., 1.)
             q_target *= weights
             q_pred *= weights
 
@@ -77,4 +82,4 @@ class DuelingDQNLearner(Learner):
         self.optimizer.step()
 
         if self.prioritized:
-            return sample_idx, td_error
+            return sample_idx.cpu(), td_error.cpu()
