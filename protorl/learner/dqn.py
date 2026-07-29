@@ -4,11 +4,12 @@ import torch as T
 
 
 class DQNLearner(Learner):
-    def __init__(self, eval_net, target_net, use_double=False,
+    def __init__(self, eval_net, target_net, use_double=False, use_atari=False,
                  tau=1.0, gamma=0.99, lr=1e-4, prioritized=False):
         super().__init__(gamma=gamma, tau=tau)
         self.use_double = use_double
         self.prioritized = prioritized
+        self.use_atari = use_atari
 
         self.q_eval = eval_net
         self.q_next = target_net
@@ -45,6 +46,11 @@ class DQNLearner(Learner):
         if len(states.shape) > 4:
             states = states.squeeze()
             states_ = states_.squeeze()
+
+        # we no longer save states and states_ as fp16, to save space.
+        if self.use_atari:
+            states /= 255.0
+            states_ /= 255.0
 
         indices = np.arange(len(states))
         q_pred = self.q_eval.forward(states)[indices, actions]
