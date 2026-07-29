@@ -14,8 +14,8 @@ def main():
     # env_name = 'SpaceInvadersNoFrameskip-v4'
     # env_name = 'LunarLander-v2'
     use_prioritization = True
-    use_double = False
-    use_dueling = False
+    use_double = True
+    use_dueling = False # has to be false for this example; dueling agent is different
     use_atari = True
     env = make_env(env_name, use_atari=use_atari)
     n_games = 1500
