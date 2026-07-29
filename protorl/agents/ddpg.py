@@ -22,7 +22,7 @@ class DDPGAgent(Agent):
         dest = self.learner.target_critic
         self.learner.update_network_parameters(src, dest)
 
-        if self.update_actor_interval % self.learn_step_counter == 0:
+        if self.learn_step_counter % self.update_actor_interval == 0:
             src = self.learner.actor
             dest = self.actor.actor
             self.actor.update_network_parameters(src, dest, tau=1.0)
