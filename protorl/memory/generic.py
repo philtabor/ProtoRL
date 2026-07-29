@@ -169,13 +169,6 @@ def initialize_memory(obs_shape, n_actions, max_size, batch_size,
         raise ValueError("action_space must be one of 'continuous', 'discrete'")
 
     fields = fields or ['states', 'actions', 'rewards', 'states_', 'dones']
-    """
-    vals = vals or [np.zeros(state_shape, dtype=np.float32),
-                    np.zeros(action_shape, dtype=a_dtype),
-                    np.zeros(reward_shape, dtype=np.float32),
-                    np.zeros(state_shape, dtype=np.float32),
-                    np.zeros(done_shape, dtype=bool)]
-    """
     vals = vals or [T.zeros(state_shape, dtype=T.float),
                     T.zeros(action_shape, dtype=a_dtype),
                     T.zeros(reward_shape, dtype=T.float),
