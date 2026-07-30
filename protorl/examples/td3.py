@@ -24,8 +24,7 @@ def main():
                                action_space='continuous',
                                )
 
-    policy = NoisyDeterministicPolicy(n_actions=env.action_space.shape[0],
-                                      min_action=env.action_space.low[0],
+    policy = NoisyDeterministicPolicy(min_action=env.action_space.low[0],
                                       max_action=env.action_space.high[0])
 
     actor_net, critic_1, critic_2, \
