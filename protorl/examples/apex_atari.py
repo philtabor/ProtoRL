@@ -18,17 +18,17 @@ from protorl.config.policy import PolicyConfig
 
 def main():
 
-    config = Config(env_name='SeaquestNoFrameskip-v5',
+    config = Config(env_name='SeaquestNoFrameskip-v4',
                     use_prioritization=True,
                     use_atari=True,
                     total_time=36000,
                     load_checkpoint=False,
                     evaluate=False,
-                    n_threads=24,
+                    n_threads=128,
                     use_double=True,
                     use_dueling=True,
                     clip_reward=True,
-                    memory_capacity=900_000,#524_288,# 1_048_576,#524_288,
+                    memory_capacity=500_000,#524_288,# 1_048_576,#524_288,
                     batch_size=512,
                     alpha=0.6,
                     beta=0.4,
