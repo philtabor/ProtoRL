@@ -4,11 +4,12 @@ import torch as T
 
 
 class DQNLearner(Learner):
-    def __init__(self, eval_net, target_net, use_double=False,
+    def __init__(self, eval_net, target_net, use_double=False, use_atari=False,
                  tau=1.0, gamma=0.99, lr=1e-4, prioritized=False):
         super().__init__(gamma=gamma, tau=tau)
         self.use_double = use_double
         self.prioritized = prioritized
+        self.use_atari = use_atari
 
         self.q_eval = eval_net
         self.q_next = target_net
@@ -40,6 +41,17 @@ class DQNLearner(Learner):
                     transitions
         else:
             states, actions, rewards, states_, dones = transitions
+        
+        # we need the batch dimension for action selection, but already have it for learning
+        if len(states.shape) > 4:
+            states = states.squeeze()
+            states_ = states_.squeeze()
+
+        # we no longer save states and states_ as fp16, to save space.
+        if self.use_atari:
+            states /= 255.0
+            states_ /= 255.0
+
         indices = np.arange(len(states))
         q_pred = self.q_eval.forward(states)[indices, actions]
 
@@ -57,9 +69,8 @@ class DQNLearner(Learner):
         q_target = rewards + self.gamma * q_next
 
         if self.prioritized:
-            td_error = np.abs((q_target.detach().cpu().numpy() -
-                               q_pred.detach().cpu().numpy()))
-            td_error = np.clip(td_error, 0., 1.)
+            td_error = T.abs((q_target.detach().cpu()-q_pred.detach().cpu()))
+            td_error = T.clamp(td_error, 0., 1.)
 
             q_target *= weights
             q_pred *= weights
@@ -69,4 +80,4 @@ class DQNLearner(Learner):
         self.optimizer.step()
 
         if self.prioritized:
-            return sample_idx, td_error
+            return sample_idx.cpu(), td_error.detach().cpu()

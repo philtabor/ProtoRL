@@ -20,7 +20,7 @@ class MemoryClient:
         return self._send_request(('add', experience, vals))
 
     def sample(self):
-        return self._send_request(('sample', ))
+        return self._send_request(('sample',))
 
     def update_priorities(self, indices, priorities):
         return self._send_request(('update', indices, priorities))

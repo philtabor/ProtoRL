@@ -5,10 +5,11 @@ import numpy as np
 
 @dataclass
 class Node:
-    value: float = 0.1
-    total: float = 0.1
+    value: float = 0.0
+    total: float = 0.0
 
     def update_priority(self, priority: float):
+        # this allows for negative totals
         delta = priority - self.value
         self.value = priority
         self.total += delta
@@ -66,7 +67,7 @@ class SumTree:
         total_weight = self.sum_tree[0].total
         # if we're not using our actors to come up with initial estimates for
         # priorities, then we will default to uniform sampling.
-        if total_weight == 0.1:
+        if total_weight == 0.0:
             samples = np.random.choice(self.counter, self.batch_size, replace=False)
             probs = [1 / self.batch_size for _ in range(self.batch_size)]
             return samples, probs
@@ -74,15 +75,14 @@ class SumTree:
         samples, probs, n_samples = [], [], 1
         index = self.counter % self.max_size - 1
         samples.append(index)
-        probs.append(self.sum_tree[index].value / self.sum_tree[0].total)
+        probs.append(max(self.sum_tree[index].value / self.sum_tree[0].total, 1e-4))
         while n_samples < self.batch_size:
             index = 0
             target = total_weight * np.random.random()
             while True:
                 left = 2 * index + 1
                 right = 2 * index + 2
-                if left > len(self.sum_tree) - 1\
-                   or right > len(self.sum_tree) - 1:
+                if left > len(self.sum_tree) - 1 or right > len(self.sum_tree) - 1:
                     break
                 left_sum = self.sum_tree[left].total
                 if target < left_sum:
@@ -98,7 +98,8 @@ class SumTree:
             # no guarantee there won't be repeat indices in samples!
             samples.append(index)
             n_samples += 1
-            probs.append(max(self.sum_tree[index].value, 1e-6) / self.sum_tree[0].total)
+            probs.append(max(self.sum_tree[index].value / self.sum_tree[0].total, 1e-4))
+
         return samples, probs
 
     def sample(self):
@@ -107,8 +108,7 @@ class SumTree:
         return samples, weights
 
     def _calculate_weights(self, probs: List):
-        weights = np.array([(1 / self.counter * 1 / prob)**self.beta
-                                for prob in probs])
+        weights = np.array([(1 / self.counter * 1 / prob)**self.beta for prob in probs])
         weights *= 1 / max(weights)
         return weights
 

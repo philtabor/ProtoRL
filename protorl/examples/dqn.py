@@ -6,16 +6,16 @@ from protorl.policies.epsilon_greedy import EpsilonGreedyPolicy
 from protorl.utils.network_utils import make_dqn_networks
 from protorl.wrappers.common import make_env
 from protorl.memory.generic import initialize_memory
-
+import torch as T
 
 def main():
     # env_name = 'CartPole-v1'
-    # env_name = 'PongNoFrameskip-v0'
-    env_name = 'SpaceInvadersNoFrameskip-v4'
+    env_name = 'PongNoFrameskip-v0'
+    # env_name = 'SpaceInvadersNoFrameskip-v4'
     # env_name = 'LunarLander-v2'
     use_prioritization = True
     use_double = True
-    use_dueling = False
+    use_dueling = False # has to be false for this example; dueling agent is different
     use_atari = True
     env = make_env(env_name, use_atari=use_atari)
     n_games = 1500
@@ -46,6 +46,7 @@ def main():
                           prioritized=use_prioritization, lr=1e-4)
 
     agent = Agent(dqn_actor, dqn_learner, prioritized=use_prioritization)
+
     sample_mode = 'prioritized' if use_prioritization else 'uniform'
     ep_loop = EpisodeLoop(agent, env, memory, sample_mode=sample_mode,
                           prioritized=use_prioritization,
@@ -55,4 +56,6 @@ def main():
 
 
 if __name__ == '__main__':
+    T.set_num_threads(1)
+    T.set_num_interop_threads(1)
     main()

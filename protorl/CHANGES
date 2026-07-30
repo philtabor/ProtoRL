@@ -1,0 +1,10 @@
+PPO ATARI
+	changed fire reset env wrapper to get rid of the info in the step returns
+	moved advantage and return calculation to the rollout loop
+	created rollout loop to replace episode loop
+	added additional wrappers for atari
+	added monitor wrapper
+	changed the calculation for convolutional outputs to be more generalized
+	changed PPO to added flattened memories instead of a matrix of memories
+		fixed this! it doesn't work
+		need to use the swap_axes_and_flatten func

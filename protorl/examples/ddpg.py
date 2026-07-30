@@ -9,8 +9,7 @@ from protorl.wrappers.common import make_env
 
 
 def main():
-    # env_name = 'LunarLanderContinuous-v2'
-    env_name = 'LunarLander-v2'
+    env_name = 'LunarLanderContinuous-v3'
     n_games = 1500
     bs = 64
 
@@ -22,8 +21,7 @@ def main():
                                n_actions=env.action_space.shape[0],
                                action_space='continuous',
                                )
-    policy = NoisyDeterministicPolicy(n_actions=env.action_space.shape[0],
-                                      min_action=env.action_space.low[0],
+    policy = NoisyDeterministicPolicy(min_action=env.action_space.low[0],
                                       max_action=env.action_space.high[0])
 
     actor, critic, target_actor, target_critic = make_ddpg_networks(env)

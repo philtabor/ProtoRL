@@ -34,7 +34,7 @@ class LinearBase(NetworkCore, nn.Module):
 
 
 class AtariBase(NetworkCore, nn.Module):
-    def __init__(self, input_dims, channels=(32, 64, 64),
+    def __init__(self, input_channels=4, channels=(32, 64, 64),
                  kernels=(8, 4, 3), strides=(4, 2, 1),
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -43,7 +43,7 @@ class AtariBase(NetworkCore, nn.Module):
         assert len(kernels) == 3, "Must supply 3 kernels for AtariBase"
         assert len(strides) == 3, "Must supply 3 strides for AtariBase"
 
-        self.conv1 = nn.Conv2d(input_dims[0], channels[0],
+        self.conv1 = nn.Conv2d(input_channels, channels[0],
                                kernels[0], strides[0])
         self.conv2 = nn.Conv2d(channels[0], channels[1],
                                kernels[1], strides[1])

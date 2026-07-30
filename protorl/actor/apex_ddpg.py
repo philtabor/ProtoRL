@@ -21,7 +21,7 @@ class ApexActor(Actor):
                                        self.target_critic, tau=1.0)
 
         self.gamma = gamma
-        self.local_memory = NStepBuffer(config.n_step, gamma, config.n_batches_to_store)
+        self.local_memory = NStepBuffer(config.n_step, gamma)
 
     def save_models(self, fname=None):
         fname = fname or 'models/ddpg_actor_' + self.name
@@ -68,8 +68,8 @@ class ApexActor(Actor):
     def store_transition(self, transition):
         self.local_memory.store_transition(transition)
 
-    def get_n_step_returns(self):
-        transitions = self.local_memory.compute_n_step_returns()
+    def get_n_step_returns(self, end_of_episode=False):
+        transitions = self.local_memory.compute_n_step_returns(end_of_episode)
         return transitions
 
     @T.no_grad()
@@ -84,7 +84,7 @@ class ApexActor(Actor):
 
         critic_value_[dones] = 0.0
 
-        target = R + self.gamma*gammas * critic_value_
+        target = R + gammas * critic_value_
 
         td_errors = 0.5*((target - critic_value)**2).numpy()
 

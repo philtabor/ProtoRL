@@ -19,6 +19,3 @@ class Learner:
             tau = self.tau
         for param, target in zip(src.parameters(), dest.parameters()):
             target.data.copy_(tau * param.data + (1 - tau) * target.data)
-
-    def update(self, *args):
-        raise NotImplementedError

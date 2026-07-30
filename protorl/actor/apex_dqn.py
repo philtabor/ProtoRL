@@ -16,11 +16,11 @@ class ApexActor(Actor):
 
         if config:
             self.n = config.n_step
-            self.n_batches_to_store = config.n_batches_to_store
+            # self.n_batches_to_store = config.n_batches_to_store
             self.use_double = config.use_double
 
         self.gamma = gamma
-        self.local_memory = NStepBuffer(self.n, self.gamma, self.n_batches_to_store)
+        self.local_memory = NStepBuffer(self.n, self.gamma)
 
     def save_models(self, fname=None):
         fname = fname or 'models/apex_dqn_actor'
@@ -44,6 +44,7 @@ class ApexActor(Actor):
 
     def choose_action(self, observation):
         state = T.tensor(observation, dtype=T.float, device=self.device)
+        state /= 255.0
         _, advantage = self.q_eval(state)
         action = self.policy(advantage).item()
         return action
@@ -61,14 +62,17 @@ class ApexActor(Actor):
             param.data = flat_params[pointer:pointer + num_params].view_as(param).clone()
             pointer += num_params
 
-    def get_n_step_returns(self):
-        transitions = self.local_memory.compute_n_step_returns()
+    def get_n_step_returns(self, end_of_episode=False):
+        transitions = self.local_memory.compute_n_step_returns(end_of_episode)
         return transitions
 
     @T.no_grad()
     def calculate_priorities(self, transitions):
         exp = convert_arrays_to_tensors(transitions, self.device)
         states, actions, R, states_, dones, gammas = exp
+
+        states = states.squeeze(1).to(dtype=T.float) / 255.0
+        states_ = states_.squeeze(1).to(dtype=T.float) / 250.0
 
         indices = np.arange(len(states))
         V_s, A_s = self.q_eval(states)
@@ -89,8 +93,9 @@ class ApexActor(Actor):
         else:
             q_next = q_next.max(dim=1)[0]
 
-        q_target = R + self.gamma*gammas*q_next
+        q_target = R + gammas*q_next
 
         td_error = np.abs((q_target.detach().cpu().numpy() -
                             q_pred.detach().cpu().numpy()))
+        td_error = np.clip(td_error, 0., 1.)
         return td_error

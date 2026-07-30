@@ -1,35 +1,40 @@
 import os
+# os.environ["OMP_NUM_THREADS"] = "1"
+# os.environ["MKL_NUM_THREADS"] = "1"
+
 import torch as T
+
 import torch.multiprocessing as mp
-from protorl.policies.noisy_deterministic import NoisyDeterministicPolicy
+from protorl.policies.epsilon_greedy import EpsilonGreedyPolicy
 from protorl.wrappers.common import make_env
-from protorl.utils.network_utils import make_apex_ddpg_networks
-from protorl.runners.apex_atari_actor import actor_fn
-from protorl.runners.apex_atari_learner import learner_fn
-from protorl.actor.apex_ddpg import ApexActor as Actor
-from protorl.learner.apex_ddpg import ApexLearner as Learner
+from protorl.utils.network_utils import make_dqn_networks
+from protorl.runners.apex_actor import actor_fn
+from protorl.runners.apex_learner import learner_fn
+from protorl.actor.apex_dqn import ApexActor as Actor
+from protorl.learner.apex_dqn import ApexLearner as Learner
 from protorl.config.general import Config
 from protorl.config.policy import PolicyConfig
 
 
 def main():
-    config = Config(env_name='Humanoid-v5',
+
+    config = Config(env_name='SeaquestNoFrameskip-v4',
                     use_prioritization=True,
-                    total_time=30,
+                    use_atari=True,
+                    total_time=36000,
                     load_checkpoint=False,
                     evaluate=False,
-                    n_threads=32,
-                    clip_reward=False,
-                    memory_capacity=2_000_000,
-                    batch_size=64,
+                    n_threads=128,
+                    use_double=True,
+                    use_dueling=True,
+                    clip_reward=True,
+                    memory_capacity=500_000,#524_288,# 1_048_576,#524_288,
+                    batch_size=512,
                     alpha=0.6,
-                    actor_lr=1e-4,
-                    critic_lr=1e-4,
-                    action_space='continuous',
-                    warmup=10_000,
-                    target_replace_interval=1000,
-                    actor_dims=[400, 300],
-                    critic_dims=[300, 200],
+                    beta=0.4,
+                    learner_lr=1e-4, # 6.25e-5,
+                    action_space='discrete',
+                    warmup=50_000,
                     n_step=3,
                     # make sure batches to store is a multiple of n_step!
                     n_batches_to_store=192,
@@ -37,27 +42,36 @@ def main():
 
     env = make_env(config.env_name, use_atari=config.use_atari)
     observation_shape = env.observation_space.shape
-    actor_policy_config = [PolicyConfig(noise=0.001)]
-    config.n_actions = env.action_space.shape[0]
+    n_actions = env.action_space.n
 
-    # noises = [0.25 ** (i/(config.n_threads-1)) for i in range (config.n_threads)]
-    for _ in range(config.n_threads-1):
-        actor_policy_config.append(PolicyConfig(noise=0.25))
+    eps_min = 0.01
+    eps_max = 0.5
+    n = config.n_threads
 
-    actor, critic, target_actor, target_critic = \
-        make_apex_ddpg_networks(env, config=config, device=config.learner_device)
+    epsilons = [eps_min * (eps_max / eps_min) ** (i / (n - 1)) for i in range(n)]
+    actor_policy_config = [PolicyConfig(n_actions=n_actions,
+                                        eps_dec=0,
+                                        eps_start=eps_min,
+                                        eps_min=eps_min)]
 
-    # apex_learner = Learner(actor, critic, target_actor, target_critic, config=config)
+    for i in range(config.n_threads-1):
+        actor_policy_config.append(PolicyConfig(n_actions=n_actions,
+                                        eps_dec=0,
+                                        eps_start=epsilons[i+1],
+                                        eps_min=epsilons[i+1]))
+
+    q_eval, _ = make_dqn_networks(env, config=config)
 
     env.close()
     del env
 
+
     mp.set_start_method("spawn")
     names = [str(i) for i in range(config.n_threads)]
 
-    total_params = sum(p.numel() for p in actor.parameters()) +\
-                   sum(p.numel() for p in critic.parameters())
-    del actor, critic
+    total_params = sum(p.numel() for p in q_eval.parameters())
+
+    del q_eval
 
     shared_params = mp.RawArray('f', total_params)
 
@@ -75,32 +89,23 @@ def main():
 
     param_update_lock = mp.Lock()
 
-    # request_queue = mp.Queue()
-    # response_queue = mp.Queue()
-
-    # extra_fields = ['gammas']
-    # extra_vals = [np.zeros(config.memory_capacity, dtype=np.float32)]
-    # ps = [mp.Process(target=memory_server_process,
-    #                 args=(observation_shape, config,
-    #                       request_queue, response_queue,
-    #                       extra_fields, extra_vals))]
-    max_mem_size = config.memory_capacity
-    state_shape = (max_mem_size, *observation_shape)
-    action_shape = (max_mem_size, config.n_actions)
-    reward_shape = done_shape = (max_mem_size)
     fields = ['states', 'actions', 'rewards', 'states_', 'dones', 'gammas']
-    vals = [T.zeros(state_shape, dtype=T.float).pin_memory().share_memory_(),
-            T.zeros(action_shape, dtype=T.float).pin_memory().share_memory_(),
+    max_mem_size = config.memory_capacity
+    assert observation_shape is not None # linter complains because the observation shape is type tuple[int, ..] | None
+    state_shape = (max_mem_size,*observation_shape)
+    action_shape = done_shape = reward_shape = (max_mem_size)
+
+    vals = [T.zeros(state_shape, dtype=T.uint8).pin_memory().share_memory_(),
+            T.zeros(action_shape, dtype=T.int).pin_memory().share_memory_(),
             T.zeros(reward_shape, dtype=T.float).pin_memory().share_memory_(),
-            T.zeros(state_shape, dtype=T.float).pin_memory().share_memory_(),
+            T.zeros(state_shape, dtype=T.uint8).pin_memory().share_memory_(),
             T.zeros(done_shape, dtype=T.bool).pin_memory().share_memory_(),
             T.zeros(reward_shape, dtype=T.float).pin_memory().share_memory_()]
-
 
     shared_sum_tree = T.zeros(2*max_mem_size).share_memory_()
     ps = []
     ps.append(mp.Process(target=learner_fn, args=(Learner,
-                                                  make_apex_ddpg_networks,
+                                                  make_dqn_networks,
                                                   config,
                                                   shared_params,
                                                   update_event,
@@ -114,25 +119,19 @@ def main():
                                                   tree_lock,
                                                   shared_sum_tree,
                                                   param_update_lock)))
-                                                  # request_queue,
-                                                  # response_queue,
-                                                  # global_idx)))
 
     for idx, name in enumerate(names):
         ps.append(mp.Process(target=actor_fn, args=(name,
                                                     Actor,
-                                                    make_apex_ddpg_networks,
-                                                    NoisyDeterministicPolicy,
+                                                    make_dqn_networks,
+                                                    EpsilonGreedyPolicy,
                                                     global_idx,
                                                     shared_params,
                                                     update_event,
                                                     active_threads,
-                                                    # request_queue,
-                                                    # response_queue,
                                                     config,
                                                     actor_policy_config[idx],
-                                                    fields,
-                                                    vals,
+                                                    fields, vals,
                                                     global_memory_idx,
                                                     index_lock,
                                                     tree_lock,
@@ -144,4 +143,6 @@ def main():
 
 if __name__ == "__main__":
     os.environ['OMP_NUM_THREADS'] = '1'
+    T.set_num_threads(1)
+    T.set_num_interop_threads(1)
     main()

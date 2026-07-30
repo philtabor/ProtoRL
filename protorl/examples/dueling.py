@@ -16,6 +16,7 @@ def main():
     use_double = True
     use_dueling = True
     use_atari = False
+    print_every = 4 if use_atari else 10
     env = make_env(env_name, use_atari=use_atari)
     n_games = 1500
     bs = 64
@@ -28,7 +29,7 @@ def main():
                                n_actions=env.action_space.n,
                                action_space='discrete',
                                prioritized=use_prioritization,
-                               alpha=0.3,
+                               alpha=0.6,
                                beta=0.5
                                )
 
@@ -42,12 +43,14 @@ def main():
                                          use_dueling=use_dueling,
                                          use_atari=use_atari)
     dqn_learner = Learner(q_eval, q_target,
-                          prioritized=use_prioritization, lr=1e-4)
+                          prioritized=use_prioritization, lr=1e-4,
+                          use_atari=use_atari)
 
     agent = Agent(dqn_actor, dqn_learner, prioritized=use_prioritization)
     sample_mode = 'prioritized' if use_prioritization else 'uniform'
     ep_loop = EpisodeLoop(agent, env, memory, sample_mode=sample_mode,
                           prioritized=use_prioritization,
+                          print_every=print_every,
                           load_checkpoint=False, evaluate=False)
     scores, steps_array = ep_loop.run(n_games)
 
