@@ -94,13 +94,13 @@ def main():
     assert observation_shape is not None # linter complains because the observation shape is type tuple[int, ..] | None
     state_shape = (max_mem_size,*observation_shape)
     action_shape = done_shape = reward_shape = (max_mem_size)
+    vals = [T.zeros(state_shape, dtype=T.uint8).share_memory_(),
+            T.zeros(action_shape, dtype=T.int).share_memory_(),
+            T.zeros(reward_shape, dtype=T.float).share_memory_(),
+            T.zeros(state_shape, dtype=T.uint8).share_memory_(),
+            T.zeros(done_shape, dtype=T.bool).share_memory_(),
+            T.zeros(reward_shape, dtype=T.float).share_memory_()]
 
-    vals = [T.zeros(state_shape, dtype=T.uint8).pin_memory().share_memory_(),
-            T.zeros(action_shape, dtype=T.int).pin_memory().share_memory_(),
-            T.zeros(reward_shape, dtype=T.float).pin_memory().share_memory_(),
-            T.zeros(state_shape, dtype=T.uint8).pin_memory().share_memory_(),
-            T.zeros(done_shape, dtype=T.bool).pin_memory().share_memory_(),
-            T.zeros(reward_shape, dtype=T.float).pin_memory().share_memory_()]
 
     shared_sum_tree = T.zeros(2*max_mem_size).share_memory_()
     ps = []
