@@ -7,6 +7,7 @@ from protorl.networks.head import DuelingHead, QHead
 from protorl.networks.head import BetaHead, SoftmaxHead
 from protorl.networks.head import DeterministicHead, MeanAndSigmaHead
 from protorl.networks.head import ValueHead
+from protorl.networks.full import R2D2Network
 from protorl.utils.common import calculate_conv_output_dims
 
 
@@ -250,3 +251,13 @@ def make_apex_ddpg_networks(env,
     target_critic = Sequential(target_critic_base, target_critic_head)
 
     return actor, critic, target_actor, target_critic
+
+
+def make_r2d2_network(env, config, device):
+    n_actions = env.action_space.n
+    input_dims = env.observation_space.shape
+
+    online_network = R2D2Network(input_dims, n_actions, device=device)
+    target_network = R2D2Network(input_dims, n_actions, device=device)
+
+    return online_network, target_network

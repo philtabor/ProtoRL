@@ -35,6 +35,7 @@ class GenericBuffer:
         index = self.mem_cntr.value % self.mem_size
         items = convert_arrays_to_tensors(items, device='cpu')
         for item, field in zip(items, self.fields):
+            print(f"storing field: {field} shape: {item.shape}")
             getattr(self, field)[index] = item
         self.mem_cntr.value += 1
         if self.prioritized:
