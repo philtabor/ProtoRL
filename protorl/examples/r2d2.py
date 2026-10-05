@@ -1,6 +1,4 @@
 import os
-# os.environ["OMP_NUM_THREADS"] = "1"
-# os.environ["MKL_NUM_THREADS"] = "1"
 
 import torch as T
 
@@ -11,34 +9,38 @@ from protorl.utils.network_utils import make_r2d2_network
 from protorl.runners.r2d2_actor import actor_fn
 from protorl.runners.r2d2_learner import learner_fn
 from protorl.actor.r2d2 import R2D2Actor as Actor
-from protorl.learner.apex_dqn import ApexLearner as Learner
+from protorl.learner.r2d2 import R2D2Learner as Learner
 from protorl.config.general import Config
 from protorl.config.policy import PolicyConfig
 
 
 def main():
 
-    config = Config(env_name='SeaquestNoFrameskip-v4',
+    config = Config(env_name='SpaceInvadersNoFrameskip-v4',
                     use_prioritization=True,
                     use_atari=True,
                     total_time=36000,
                     load_checkpoint=False,
                     evaluate=False,
-                    n_threads=4,
+                    n_threads=32,
                     use_double=True,
                     use_dueling=True,
                     clip_reward=False,
-                    memory_capacity=5000,
-                    batch_size=512,
-                    alpha=0.6,
-                    beta=0.4,
+                    memory_capacity=7000,
+                    batch_size=128,
+                    alpha=0.9,
+                    beta=0.6,       # paper value; update_beta now anneals from here
+                    gamma=0.997,    # M2: explicit; flows to actor n-step returns
                     learner_lr=1e-4, # 6.25e-5,
                     action_space='discrete',
-                    warmup=50_000,
+                    warmup=5_000,   # was 50_000 rows = 6.25M env steps of dead time;
+                                    # 5k rows = ~600k transitions, ample for a 7k-row buffer
                     n_step=5,
                     # make sure batches to store is a multiple of n_step!
                     n_batches_to_store=120,
-                    n_batches_to_sample=32)
+                    n_batches_to_sample=32,
+                    learner_device='cuda:1'
+                    )
 
     env = make_env(config.env_name, use_atari=config.use_atari)
     observation_shape = env.observation_space.shape

@@ -13,6 +13,7 @@ class Config:
                  batch_size=64,
                  alpha=0.5,
                  beta=0.5,
+                 gamma=0.997,
                  learner_device='cuda:0',
                  memory_device='cpu',
                  actor_device='cpu',
@@ -42,6 +43,9 @@ class Config:
         self.batch_size = batch_size
         self.alpha = alpha
         self.beta = beta
+        # M2 fix: Config previously had no gamma field, so R2D2Actor silently fell
+        # back to its 0.99 signature default for n-step returns; paper uses 0.997
+        self.gamma = gamma
         self.learner_device = learner_device
         self.memory_device = memory_device
         self.actor_device = actor_device

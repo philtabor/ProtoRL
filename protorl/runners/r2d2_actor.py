@@ -62,8 +62,8 @@ def actor_fn(name, actor_creator, network_creator, policy_creator,
         done, trunc = False, False
         observation, _ = env.reset()
         score = 0.0
-        hx = T.ones((1, 128)).to('cpu')
-        cx = T.ones((1, 128)).to('cpu')
+        hx = T.ones((1, 1, 128)).to('cpu')
+        cx = T.ones((1, 1, 128)).to('cpu')
         action = env.action_space.sample()
         observation, reward, done, trunc, _ = env.step(action)
         r = clip_reward(reward) if config.clip_reward else reward
@@ -72,9 +72,9 @@ def actor_fn(name, actor_creator, network_creator, policy_creator,
 
         offset = config.n_batches_to_store
         while not (done or trunc):
+            hx_seq.append(hx.detach().numpy())
+            cx_seq.append(cx.detach().numpy())
             action, (hx_new, cx_new) = actor.choose_action(observation, hx, cx, action, reward)
-            hx_seq.append(hx_new.detach().numpy())
-            cx_seq.append(cx_new.detach().numpy())
             hx = hx_new
             cx = cx_new
             observation_, reward, done, trunc, _ = env.step(action)
@@ -86,31 +86,19 @@ def actor_fn(name, actor_creator, network_creator, policy_creator,
             if not config.evaluate:
                 ep_end = done or trunc
                 actor.store_transition([observation, action, r, observation_, ep_end])
-                time_to_store = n_steps % (config.n_step + offset) == 0
+                time_to_store = ep_length % (config.n_step + offset) == 0
 
                 if time_to_store or ep_end:
                     # we produce so much data, we can afford to throw away short episodes
-                    if ep_length < config.n_batches_to_store:
+                    if ep_end:
+                        hx_seq, cx_seq = [], []
+                        actor.local_memory.buffer.clear()
                         continue
                     states, actions, rewards, states_, dones, gammas = \
                         actor.get_n_step_returns(end_of_episode=ep_end)
 
                     if len(states) > 0:
-                        transitions = [
-                                T.tensor(states[-offset:],  dtype=vals[0].dtype),
-                                T.tensor(actions[-offset:], dtype=vals[1].dtype),
-                                T.tensor(rewards[-offset:], dtype=vals[2].dtype),
-                                T.tensor(states_[-offset:], dtype=vals[3].dtype),
-                                T.tensor(dones[-offset:],   dtype=vals[4].dtype),
-                                T.tensor(gammas[-offset:],  dtype=vals[5].dtype),
-                                T.tensor(np.array(hx_seq),  dtype=hx_new.dtype),
-                                T.tensor(np.array(cx_seq),  dtype=cx_new.dtype)
-                        ]
-
-                        if config.use_prioritization:
-                            td_errors = actor.calculate_priorities(transitions)
-                        else:
-                            td_errors = None
+                        seq = slice(config.n_step,config.n_step+offset)
                         transitions = [
                                 T.tensor(states[:offset],  dtype=vals[0].dtype),
                                 T.tensor(actions[:offset], dtype=vals[1].dtype),
@@ -118,10 +106,31 @@ def actor_fn(name, actor_creator, network_creator, policy_creator,
                                 T.tensor(states_[:offset], dtype=vals[3].dtype),
                                 T.tensor(dones[:offset],   dtype=vals[4].dtype),
                                 T.tensor(gammas[:offset],  dtype=vals[5].dtype),
-                                T.tensor(np.array(hx_seq[:offset]),  dtype=hx_new.dtype),
-                                T.tensor(np.array(cx_seq[:offset]),  dtype=cx_new.dtype)
+                                T.tensor(np.array(hx_seq[:offset]),  dtype=hx_new.dtype).squeeze(1),
+                                T.tensor(np.array(cx_seq[:offset]),  dtype=cx_new.dtype).squeeze(1),
+                                T.tensor(np.array(hx_seq[seq]), dtype=hx_new.dtype).squeeze(1),
+                                T.tensor(np.array(cx_seq[seq]), dtype=cx_new.dtype).squeeze(1)
                         ]
 
+                        if config.use_prioritization:
+                            td_errors = actor.calculate_priorities(transitions)
+                        else:
+                            td_errors = None
+                        # print(f"storing transition, cx shape {T.tensor(np.array(hx_seq[0])).shape} hx shape {T.tensor(np.array(cx_seq[0])).shape}")
+                        # cx_shape = hx_shape = [1, 1, 128]
+                        transitions = [
+                                T.tensor(states[-offset:],  dtype=vals[0].dtype).unsqueeze(0),
+                                T.tensor(actions[-offset:], dtype=vals[1].dtype).unsqueeze(0),
+                                T.tensor(rewards[-offset:], dtype=vals[2].dtype).unsqueeze(0),
+                                T.tensor(states_[-offset:], dtype=vals[3].dtype).unsqueeze(0),
+                                T.tensor(dones[-offset:],   dtype=vals[4].dtype).unsqueeze(0),
+                                T.tensor(gammas[-offset:],  dtype=vals[5].dtype).unsqueeze(0),
+                                T.tensor(np.array(hx_seq[0]),  dtype=hx_new.dtype),# .unsqueeze(0),
+                                T.tensor(np.array(cx_seq[0]),  dtype=cx_new.dtype)#.unsqueeze(0)
+                        ]
+
+                        hx_seq = hx_seq[offset:]
+                        cx_seq = cx_seq[offset:]
 
                         replay_buffer.store_batch_transition(transitions, td_errors)
 

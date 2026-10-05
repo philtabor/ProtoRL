@@ -123,11 +123,11 @@ class R2D2Network(NetworkCore, nn.Module):
             shape = (*prev_a.shape, 512)
             x = x.reshape(*shape)
         # recurrent_input = T.cat([x, prev_a_one_hot, prev_r.reshape((1,1))], dim=-1)
-        # print(f"shapes -> x: {x.shape} prev_a_one_hot: {prev_a_one_hot.shape} prev_r: {prev_r.shape}")
         recurrent_input = T.cat([x, prev_a_one_hot, prev_r], dim=-1)
-        if prev_a.shape > T.zeros(1).shape:
+        # if prev_a.shape > T.zeros(1).shape:
+        #    recurrent_input = recurrent_input.unsqueeze(1)
+        if len(recurrent_input.shape) == 2:
             recurrent_input = recurrent_input.unsqueeze(1)
-
         recurrent_out, (hx_new, cx_new) = self.recurrent(recurrent_input, (hx, cx))
 
         V = self.V(recurrent_out)
