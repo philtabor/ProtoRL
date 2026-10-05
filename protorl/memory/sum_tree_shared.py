@@ -28,7 +28,6 @@ class SumTree:
     def update_priorities(self, buffer_indices, priorities):
         buffer_indices = np.array(buffer_indices, dtype=np.int32)
         priorities = np.array(priorities, dtype=np.float32)
-        
         p_alpha = priorities ** self.alpha
         tree_indices = buffer_indices + self.max_size
         self.tree[tree_indices] = p_alpha

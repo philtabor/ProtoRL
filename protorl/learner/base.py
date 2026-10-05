@@ -2,11 +2,11 @@ import torch as T
 
 
 class Learner:
-    def __init__(self, gamma=0.99, tau=0.001):
+    def __init__(self, gamma=0.99, tau=0.001, device=None):
         self.gamma = gamma
         self.tau = tau
         self.networks = []
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        self.device = device or T.device('cuda:0' if T.cuda.is_available() else 'cpu')
 
     def save_models(self):
         raise NotImplementedError

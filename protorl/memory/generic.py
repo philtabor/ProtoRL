@@ -22,6 +22,8 @@ class GenericBuffer:
         self.device = device
         self.warmup = warmup
         self.n_threads = n_threads
+        # keep the configured beta so update_beta can anneal from the right start
+        self.beta = beta
         self.index_lock = index_lock if index_lock is not None else nullcontext()
         self.tree_lock = tree_lock if tree_lock is not None else nullcontext()
         if prioritized:
@@ -35,7 +37,6 @@ class GenericBuffer:
         index = self.mem_cntr.value % self.mem_size
         items = convert_arrays_to_tensors(items, device='cpu')
         for item, field in zip(items, self.fields):
-            print(f"storing field: {field} shape: {item.shape}")
             getattr(self, field)[index] = item
         self.mem_cntr.value += 1
         if self.prioritized:
@@ -48,9 +49,6 @@ class GenericBuffer:
         n_to_store = items[0].shape[0] # Use the first dimension of the tensor (192)
         if n_to_store > self.mem_size:
             raise ValueError("A single replay write cannot exceed replay capacity.")
-
-        # if any(item[0] != n_to_store for item in items):
-        #    raise ValueError("All replay fields must have equal batch lengths")
 
         with self.index_lock:
             start_idx = self.mem_cntr.value % self.mem_size
@@ -85,10 +83,14 @@ class GenericBuffer:
         with self.tree_lock:
             self.sum_tree.update_priorities(indices, values)
 
-    def update_beta(self, current_step, beta_start=0.4, target_beta=1.0, k=0.000005):
+    def update_beta(self, current_step, beta_start=None, target_beta=1.0, k=0.000005):
         # Moves beta from beta_start toward target_beta asymptotically.
         # Formula: beta(t) = target_beta - (target_beta - beta_start) * exp(-k * t)
-        
+        # M3 fix: previously hardcoded beta_start=0.4, ignoring config.beta (paper
+        # uses 0.6); default now anneals from the beta the SumTree was built with
+        if beta_start is None:
+            beta_start = self.beta
+
         if self.prioritized:
             current_beta = target_beta - (target_beta - beta_start) * np.exp(-k * current_step)
             
@@ -137,7 +139,11 @@ class GenericBuffer:
             arr = [indices]
 
         elif sample_mode == 'prioritized':
-            indices, weights = self.sum_tree.sample(max_mem)
+            # M5 fix: actors update tree leaves concurrently (store_batch_transition);
+            # traversing without the lock can read mid-recompute parent sums and
+            # return inconsistent (index, priority) pairs
+            with self.tree_lock:
+                indices, weights = self.sum_tree.sample(max_mem)
             arr = [indices, weights]
         else:
             raise ValueError("sample_mode must be one of 'uniform', 'prioritized'")
